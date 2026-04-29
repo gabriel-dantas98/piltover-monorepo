@@ -1,4 +1,3 @@
-````markdown
 # AGENTS.md
 
 This file is the source of truth for any coding agent (Claude Code, Codex, Aider,
@@ -112,4 +111,3 @@ transparent wrapper.
 - Don't put `AWS_ACCESS_KEY_ID` in GH Secrets. Use OIDC.
 - Don't `cd` inside scripts; pass paths explicitly so logged commands are reproducible.
 - Don't bypass the engine's logging by calling `exec.Command` directly outside `tools/internal/runner/`.
-````
