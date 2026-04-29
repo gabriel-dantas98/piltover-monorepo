@@ -10,11 +10,12 @@ import (
 )
 
 func TestRun_LogsCommandPrefix(t *testing.T) {
+	dir := t.TempDir()
 	var stderr bytes.Buffer
 	r := New(Options{Stderr: &stderr})
-	err := r.Run(Cmd{Cwd: "apps/web", Name: "echo", Args: []string{"hello"}})
+	err := r.Run(Cmd{Cwd: dir, Name: "echo", Args: []string{"hello"}})
 	require.NoError(t, err)
-	assert.Contains(t, stderr.String(), "→ [apps/web] $ echo hello")
+	assert.Contains(t, stderr.String(), "→ ["+dir+"] $ echo hello")
 }
 
 func TestRun_QuietSuppressesPrefix(t *testing.T) {

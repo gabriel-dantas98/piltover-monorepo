@@ -57,6 +57,9 @@ func (r *Runner) Run(c Cmd) error {
 		return nil
 	}
 	cmd := exec.Command(c.Name, c.Args...)
+	if c.Cwd != "" {
+		cmd.Dir = c.Cwd
+	}
 	cmd.Stdout = r.opts.Stdout
 	cmd.Stderr = r.opts.Stderr
 	if len(c.Env) > 0 {
