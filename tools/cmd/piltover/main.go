@@ -3,15 +3,17 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/gabriel-dantas98/piltover-monorepo/tools/internal/cli"
 )
 
 const Version = "0.0.1"
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "--version" {
-		fmt.Println("piltover", Version)
-		return
+	root := cli.NewRootCmd()
+	root.Version = Version
+	if err := root.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, "piltover:", err)
+		os.Exit(1)
 	}
-	fmt.Fprintln(os.Stderr, "piltover: not implemented yet")
-	os.Exit(1)
 }
