@@ -1,0 +1,12 @@
+pre-commit:
+  parallel: true
+  commands:
+    piltover-lint:
+      run: ./tools/bin/piltover lint --quiet
+      glob: "**/*"
+      stage_fixed: true
+
+commit-msg:
+  commands:
+    commitlint:
+      run: npx --no-install commitlint --edit {1}
