@@ -43,7 +43,7 @@ func newDoctorCmd(g *Globals) *cobra.Command {
 		Short: "Verify required toolchains",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			asJSON, _ := cmd.Flags().GetBool("json")
-			results := runChecks(defaultChecks)
+			results := runChecks(defaultChecks, g.Verbose)
 			if asJSON {
 				cmd.Println(renderJSON(results))
 				return nil
@@ -56,9 +56,13 @@ func newDoctorCmd(g *Globals) *cobra.Command {
 	return c
 }
 
-func runChecks(checks []Check) []CheckResult {
+func runChecks(checks []Check, verbose bool) []CheckResult {
 	out := make([]CheckResult, 0, len(checks))
 	for _, ch := range checks {
+		if verbose {
+			parts := append([]string{ch.Cmd}, ch.Args...)
+			fmt.Fprintf(stderrSink(), "→ [.] $ %s\n", strings.Join(parts, " "))
+		}
 		c := exec.Command(ch.Cmd, ch.Args...)
 		bytesOut, err := c.CombinedOutput()
 		detail := strings.TrimSpace(string(bytesOut))

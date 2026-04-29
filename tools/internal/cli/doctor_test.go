@@ -13,7 +13,7 @@ func TestRunChecks_PopulatesStatus(t *testing.T) {
 		{Name: "always-ok", Cmd: "true"},
 		{Name: "always-fail", Cmd: "this-binary-does-not-exist-xyz"},
 	}
-	results := runChecks(checks)
+	results := runChecks(checks, false)
 	require.Len(t, results, 2)
 	assert.True(t, results[0].OK, "expected first check to pass")
 	assert.False(t, results[1].OK, "expected second check to fail")

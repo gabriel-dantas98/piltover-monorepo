@@ -79,7 +79,7 @@ func projectsForChangedFiles(projects []*schema.Project, changed []string) []*sc
 }
 
 func changedFiles(g *Globals, base string) ([]string, error) {
-	out, err := gitDiffNames(g.Root, base)
+	out, err := gitDiffNames(g, base)
 	if err != nil {
 		return nil, err
 	}
@@ -90,14 +90,18 @@ func changedFiles(g *Globals, base string) ([]string, error) {
 	return lines, nil
 }
 
-func gitDiffNames(root, base string) (string, error) {
+func gitDiffNames(g *Globals, base string) (string, error) {
+	if !g.Quiet {
+		fmt.Fprintf(stderrSink(), "→ [.] $ git diff --name-only %s...HEAD\n", base)
+	}
+	if g.DryRun {
+		return "", nil
+	}
 	cmd := exec.Command("git", "diff", "--name-only", base+"...HEAD")
-	cmd.Dir = root
+	cmd.Dir = g.Root
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	// Log the underlying command per the engine's logging contract.
-	fmt.Fprintf(stderrSink(), "→ [.] $ git diff --name-only %s...HEAD\n", base)
 	if err := cmd.Run(); err != nil {
 		return "", fmt.Errorf("git diff failed: %s", stderr.String())
 	}
