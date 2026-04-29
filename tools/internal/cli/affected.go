@@ -52,7 +52,7 @@ func newAffectedCmd(g *Globals) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			cmd.Println(string(b))
+			fmt.Fprintln(cmd.OutOrStdout(), string(b))
 			return nil
 		},
 	}
