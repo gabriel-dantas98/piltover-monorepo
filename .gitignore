@@ -40,3 +40,6 @@ crash.log
 
 # Docker
 *.pid
+
+# Lefthook
+.lefthook/
