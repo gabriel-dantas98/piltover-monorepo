@@ -8,6 +8,7 @@ import (
 	"github.com/gabriel-dantas98/piltover-monorepo/tools/internal/cli"
 )
 
+// Version is the engine's semantic version, surfaced via `piltover --version`.
 const Version = "0.0.1"
 
 func main() {
