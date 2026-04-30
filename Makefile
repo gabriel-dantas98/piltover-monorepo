@@ -24,7 +24,18 @@ ci: tools
 
 .PHONY: test
 test:
-	@cd tools && go test ./...
+	@cd tools && go test -race -count=1 ./...
+
+.PHONY: lint
+lint:
+	@cd tools && golangci-lint run ./...
+
+.PHONY: vet
+vet:
+	@cd tools && go vet ./...
+
+.PHONY: verify
+verify: lint vet test
 
 .PHONY: clean
 clean:

@@ -1,0 +1,70 @@
+# Minimal CI for the piltover engine.
+#
+# Plan 2 will replace this with reusable workflows + composite actions
+# orchestrated by `piltover affected` to run only what changed. Until then,
+# this single job validates the engine on every PR and on every push to main.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engine:
+    name: engine (lint + test + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: tools
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: tools/go.sum
+
+      - name: Verify go.mod tidy
+        run: |
+          go mod tidy
+          if ! git diff --quiet -- go.mod go.sum; then
+            echo "go.mod / go.sum are not tidy. Run 'go mod tidy' from tools/."
+            git --no-pager diff -- go.mod go.sum
+            exit 1
+          fi
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v2.1.6
+          working-directory: tools
+          args: --timeout=5m
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test -race -count=1 ./...
+
+      - name: go build
+        run: go build -o ./bin/piltover ./cmd/piltover
+
+      - name: Smoke (--version + ls + dry-run ci)
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./tools/bin/piltover --version
+          ./tools/bin/piltover ls
+          ./tools/bin/piltover --dry-run ci
