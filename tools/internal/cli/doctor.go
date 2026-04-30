@@ -63,6 +63,7 @@ func runChecks(checks []Check, verbose bool) []CheckResult {
 			parts := append([]string{ch.Cmd}, ch.Args...)
 			fmt.Fprintf(stderrSink(), "→ [.] $ %s\n", strings.Join(parts, " "))
 		}
+		// #nosec G204 -- doctor probes fixed well-known toolchain commands; not user-supplied input
 		c := exec.Command(ch.Cmd, ch.Args...)
 		bytesOut, err := c.CombinedOutput()
 		detail := strings.TrimSpace(string(bytesOut))

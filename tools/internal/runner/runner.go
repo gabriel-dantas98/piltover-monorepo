@@ -56,6 +56,7 @@ func (r *Runner) Run(c Cmd) error {
 	if r.opts.DryRun {
 		return nil
 	}
+	// #nosec G204 -- runner deliberately spawns user-supplied commands; sanitisation is the caller's responsibility
 	cmd := exec.Command(c.Name, c.Args...)
 	if c.Cwd != "" {
 		cmd.Dir = c.Cwd

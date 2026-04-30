@@ -12,9 +12,9 @@ import (
 
 func TestLs_PrintsDiscoveredProjects(t *testing.T) {
 	root := t.TempDir()
-	require.NoError(t, os.MkdirAll(filepath.Join(root, "clis/foo"), 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "clis/foo"), 0o750))
 	require.NoError(t, os.WriteFile(filepath.Join(root, "clis/foo/project.yaml"),
-		[]byte("name: foo\nkind: cli\nlanguage: go\n"), 0o644))
+		[]byte("name: foo\nkind: cli\nlanguage: go\n"), 0o600))
 
 	var stdout bytes.Buffer
 	cmd := NewRootCmd()

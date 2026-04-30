@@ -10,7 +10,7 @@ func newCiCmd(g *Globals) *cobra.Command {
 	return &cobra.Command{
 		Use:   "ci",
 		Short: "Run lint + test + build for every discovered project",
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			projects, err := discovery.Discover(g.Root)
 			if err != nil {
 				return err

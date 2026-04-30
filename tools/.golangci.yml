@@ -1,8 +1,8 @@
+version: "2"
 run:
   timeout: 3m
 linters:
   enable:
-    - gofmt
     - govet
     - ineffassign
     - staticcheck
@@ -10,5 +10,13 @@ linters:
     - errcheck
     - gosec
     - revive
-issues:
-  exclude-use-default: false
+  settings:
+    errcheck:
+      exclude-functions:
+        - fmt.Fprintln
+        - fmt.Fprintf
+        - fmt.Fprint
+        - (*text/tabwriter.Writer).Flush
+formatters:
+  enable:
+    - gofmt

@@ -68,7 +68,7 @@ func TestLoadFromDir(t *testing.T) {
 	require.NoError(t, os.WriteFile(path, []byte(`name: x
 kind: package
 language: ts
-`), 0o644))
+`), 0o600))
 	p, err := LoadFromDir(dir)
 	require.NoError(t, err)
 	assert.Equal(t, "x", p.Name)

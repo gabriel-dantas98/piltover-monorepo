@@ -13,6 +13,7 @@ import (
 // Kind enumerates supported subproject kinds.
 type Kind string
 
+// Kind values.
 const (
 	KindApp         Kind = "app"
 	KindPackage     Kind = "package"
@@ -26,6 +27,7 @@ const (
 // Language enumerates supported toolchains.
 type Language string
 
+// Language values.
 const (
 	LangGo     Language = "go"
 	LangTS     Language = "ts"
@@ -39,6 +41,7 @@ const (
 // ReleaseStrategy enumerates supported release pipelines.
 type ReleaseStrategy string
 
+// ReleaseStrategy values.
 const (
 	ReleaseChangesets    ReleaseStrategy = "changesets"
 	ReleaseGoReleaser    ReleaseStrategy = "goreleaser"
@@ -105,6 +108,7 @@ func ParseProject(data []byte) (*Project, error) {
 // LoadFromDir reads dir/project.yaml and returns a parsed Project with Path set
 // to the directory.
 func LoadFromDir(dir string) (*Project, error) {
+	// #nosec G304 -- project.yaml path comes from in-repo discovery, not external input
 	data, err := os.ReadFile(filepath.Join(dir, "project.yaml"))
 	if err != nil {
 		return nil, fmt.Errorf("read project.yaml: %w", err)

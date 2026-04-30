@@ -13,7 +13,7 @@ func newRunCmd(g *Globals, name, short string) *cobra.Command {
 	return &cobra.Command{
 		Use:   name + " [paths...]",
 		Short: short,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			projects, err := discovery.Discover(g.Root)
 			if err != nil {
 				return err

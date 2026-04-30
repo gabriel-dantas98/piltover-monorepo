@@ -97,6 +97,7 @@ func gitDiffNames(g *Globals, base string) (string, error) {
 	if g.DryRun {
 		return "", nil
 	}
+	// #nosec G204 -- git is a fixed executable; base is a git ref from CLI flags
 	cmd := exec.Command("git", "diff", "--name-only", base+"...HEAD")
 	cmd.Dir = g.Root
 	var stdout, stderr bytes.Buffer

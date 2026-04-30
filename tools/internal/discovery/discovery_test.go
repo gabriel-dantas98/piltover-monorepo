@@ -12,16 +12,16 @@ import (
 func TestDiscover_FindsProjects(t *testing.T) {
 	root := t.TempDir()
 
-	require.NoError(t, os.MkdirAll(filepath.Join(root, "apps/web"), 0o755))
-	require.NoError(t, os.MkdirAll(filepath.Join(root, "clis/foo"), 0o755))
-	require.NoError(t, os.MkdirAll(filepath.Join(root, "node_modules/junk"), 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "apps/web"), 0o750))
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "clis/foo"), 0o750))
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "node_modules/junk"), 0o750))
 
 	require.NoError(t, os.WriteFile(filepath.Join(root, "apps/web/project.yaml"),
-		[]byte("name: web\nkind: app\nlanguage: ts\n"), 0o644))
+		[]byte("name: web\nkind: app\nlanguage: ts\n"), 0o600))
 	require.NoError(t, os.WriteFile(filepath.Join(root, "clis/foo/project.yaml"),
-		[]byte("name: foo\nkind: cli\nlanguage: go\n"), 0o644))
+		[]byte("name: foo\nkind: cli\nlanguage: go\n"), 0o600))
 	require.NoError(t, os.WriteFile(filepath.Join(root, "node_modules/junk/project.yaml"),
-		[]byte("name: junk\nkind: cli\nlanguage: go\n"), 0o644))
+		[]byte("name: junk\nkind: cli\nlanguage: go\n"), 0o600))
 
 	projects, err := Discover(root)
 	require.NoError(t, err)
@@ -39,9 +39,9 @@ func TestDiscover_EmptyRepo(t *testing.T) {
 
 func TestDiscover_SurfaceParseErrors(t *testing.T) {
 	root := t.TempDir()
-	require.NoError(t, os.MkdirAll(filepath.Join(root, "broken"), 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "broken"), 0o750))
 	require.NoError(t, os.WriteFile(filepath.Join(root, "broken/project.yaml"),
-		[]byte("name: x\nkind: zoo\nlanguage: go\n"), 0o644))
+		[]byte("name: x\nkind: zoo\nlanguage: go\n"), 0o600))
 
 	_, err := Discover(root)
 	require.Error(t, err)
