@@ -1,0 +1,66 @@
+name: reusable-ci
+
+on:
+  workflow_call:
+    inputs:
+      project_path:
+        description: Repo-relative path of the project to lint/test/build.
+        required: true
+        type: string
+      project_name:
+        description: Display name (matrix label).
+        required: true
+        type: string
+      language:
+        description: Language declared in the project's project.yaml.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: ${{ inputs.project_name }} (${{ inputs.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./ci-cd-actions/setup-piltover
+
+      - name: Verify go.mod tidy (if Go project)
+        if: inputs.language == 'go'
+        shell: bash
+        working-directory: ${{ inputs.project_path }}
+        run: |
+          if [ -f go.mod ]; then
+            echo "→ [${{ inputs.project_path }}] $ go mod tidy"
+            go mod tidy
+            if ! git diff --quiet -- go.mod go.sum; then
+              echo "go.mod / go.sum drift detected. Run 'go mod tidy' from ${{ inputs.project_path }}."
+              git --no-pager diff -- go.mod go.sum
+              exit 1
+            fi
+          fi
+
+      - name: golangci-lint (if Go project)
+        if: inputs.language == 'go'
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.1.6
+          working-directory: ${{ inputs.project_path }}
+          args: --timeout=5m
+
+      - name: piltover lint (non-Go)
+        if: inputs.language != 'go'
+        shell: bash
+        run: piltover lint ${{ inputs.project_path }}
+
+      - name: piltover test
+        shell: bash
+        run: piltover test ${{ inputs.project_path }}
+
+      - name: piltover build
+        shell: bash
+        run: piltover build ${{ inputs.project_path }}

@@ -29,3 +29,22 @@ func TestLs_PrintsDiscoveredProjects(t *testing.T) {
 	assert.Contains(t, out, "go")
 	assert.Contains(t, out, "foo")
 }
+
+func TestLs_JSON(t *testing.T) {
+	root := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "clis/foo"), 0o750))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "clis/foo/project.yaml"),
+		[]byte("name: foo\nkind: cli\nlanguage: go\n"), 0o600))
+
+	var stdout bytes.Buffer
+	cmd := NewRootCmd()
+	cmd.SetOut(&stdout)
+	cmd.SetErr(&stdout)
+	cmd.SetArgs([]string{"--root", root, "ls", "--json"})
+	require.NoError(t, cmd.Execute())
+
+	out := stdout.String()
+	assert.Contains(t, out, `"name":"foo"`)
+	assert.Contains(t, out, `"kind":"cli"`)
+	assert.Contains(t, out, `"language":"go"`)
+}
