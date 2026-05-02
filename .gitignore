@@ -43,3 +43,8 @@ crash.log
 
 # Lefthook
 .lefthook/
+
+# Next.js
+apps/*/.next/
+apps/*/out/
+apps/*/.source/
