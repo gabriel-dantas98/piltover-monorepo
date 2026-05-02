@@ -1,0 +1,10 @@
+name: piltover
+kind: cli
+language: go
+tags: [engine, foundation]
+commands:
+  lint: golangci-lint run ./...
+  test: go test -race -count=1 ./...
+  build: go build -o ./bin/piltover ./cmd/piltover
+release:
+  strategy: goreleaser
