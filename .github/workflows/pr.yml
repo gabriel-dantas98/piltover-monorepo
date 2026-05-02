@@ -1,0 +1,51 @@
+name: pr
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  affected:
+    name: Compute affected matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.affected.outputs.matrix }}
+      has_projects: ${{ steps.affected.outputs.has_projects }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./ci-cd-actions/setup-piltover
+
+      - id: affected
+        uses: ./ci-cd-actions/piltover-affected
+        with:
+          base: origin/${{ github.event.pull_request.base.ref }}
+
+  ci:
+    name: ci
+    needs: affected
+    if: needs.affected.outputs.has_projects == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.affected.outputs.matrix) }}
+    uses: ./.github/workflows/reusable-ci.yml
+    with:
+      project_path: ${{ matrix.path }}
+      project_name: ${{ matrix.name }}
+      language: ${{ matrix.language }}
+
+  ci-skipped:
+    name: ci-skipped
+    needs: affected
+    if: needs.affected.outputs.has_projects == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No projects changed in this PR — CI skipped."
