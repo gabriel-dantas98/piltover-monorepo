@@ -140,8 +140,57 @@ func renderRuleMDX(r *rules.Rule) string {
 	fmt.Fprintf(&b, "- **Enabled:** %v\n", r.Enabled)
 	fmt.Fprintln(&b, "</Card>")
 	fmt.Fprintln(&b)
-	fmt.Fprintln(&b, r.Body)
+	fmt.Fprintln(&b, convertIndentedCodeBlocks(r.Body))
 	return b.String()
+}
+
+// convertIndentedCodeBlocks rewrites Markdown 4-space-indented code blocks to
+// fenced code blocks (``` ... ```) so the output is valid MDX. MDX does not
+// support the 4-space indented code block syntax.
+func convertIndentedCodeBlocks(body string) string {
+	lines := strings.Split(body, "\n")
+	var out []string
+	inCodeBlock := false
+	for i, line := range lines {
+		isCode := strings.HasPrefix(line, "    ") || strings.HasPrefix(line, "\t")
+		if isCode && !inCodeBlock {
+			out = append(out, "```")
+			inCodeBlock = true
+		} else if !isCode && inCodeBlock {
+			// Close the block if the next non-empty line is not code.
+			// Allow blank lines inside a code block.
+			if strings.TrimSpace(line) != "" {
+				out = append(out, "```")
+				inCodeBlock = false
+			} else {
+				// Peek: if all remaining lines until next non-blank are non-code, close now.
+				nextNonBlank := -1
+				for j := i + 1; j < len(lines); j++ {
+					if strings.TrimSpace(lines[j]) != "" {
+						nextNonBlank = j
+						break
+					}
+				}
+				if nextNonBlank == -1 || (!strings.HasPrefix(lines[nextNonBlank], "    ") && !strings.HasPrefix(lines[nextNonBlank], "\t")) {
+					out = append(out, "```")
+					inCodeBlock = false
+				}
+			}
+		}
+		if inCodeBlock {
+			// Strip the leading 4 spaces / tab for the fenced block content.
+			if strings.HasPrefix(line, "    ") {
+				line = line[4:]
+			} else if strings.HasPrefix(line, "\t") {
+				line = line[1:]
+			}
+		}
+		out = append(out, line)
+	}
+	if inCodeBlock {
+		out = append(out, "```")
+	}
+	return strings.Join(out, "\n")
 }
 
 func firstLine(body string) string {

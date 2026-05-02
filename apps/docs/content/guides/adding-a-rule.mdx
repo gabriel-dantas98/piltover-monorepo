@@ -1,0 +1,73 @@
+---
+title: "Adding a Kody rule"
+description: "Author a Kody Custom Rule and project it into the docs site."
+---
+
+# Adding a Kody rule
+
+Kody Custom Rules are markdown files with YAML frontmatter that teach the [Kodus](https://kodus.io) PR reviewer about conventions specific to this codebase. They live in `.kody/rules/` — one file per rule, named `<slug>.md`. When you run `piltover rules sync-docs`, each rule is projected into `apps/docs/content/rules/<slug>.mdx` so it appears in this docs site automatically. The single source of truth is always the file in `.kody/rules/`.
+
+## Frontmatter schema
+
+| Field | Type | Description |
+|---|---|---|
+| `title` | string | Short human-readable name for the rule. Shown in the Kodus UI and docs sidebar. |
+| `scope` | `"file"` or `"commit"` | Whether the rule applies to file-level code review or commit-level checks. |
+| `path` | string[] | Glob patterns of files the rule applies to (e.g. `["tools/**/*.go"]`). |
+| `severity_min` | `"low"` / `"medium"` / `"high"` | Minimum severity at which Kodus raises a comment. |
+| `languages` | string[] | Language tags (e.g. `["go", "ts"]`). Narrows which PRs the rule activates on. |
+| `buckets` | string[] | Categorisation labels (e.g. `["style-conventions", "operability"]`). |
+| `enabled` | boolean | Set to `false` to temporarily disable without deleting the file. |
+
+## Steps
+
+**1. Create the rule file:**
+
+```bash
+# replace <slug> with a short kebab-case name, e.g. always-log-commands
+touch .kody/rules/<slug>.md
+```
+
+```markdown
+---
+title: "Your rule title"
+scope: "file"
+path: ["tools/**/*.go"]
+severity_min: "medium"
+languages: ["go"]
+buckets: ["style-conventions"]
+enabled: true
+---
+
+Body of the rule. Explain what Kodus should look for, why it matters,
+and what a compliant implementation looks like. Markdown is supported.
+```
+
+**2. Validate the frontmatter:**
+
+```bash
+piltover rules lint
+```
+
+`piltover rules lint` checks every file in `.kody/rules/` against the required schema. Fix any reported errors before proceeding.
+
+**3. Project the rule into the docs site:**
+
+```bash
+piltover rules sync-docs
+```
+
+This writes `apps/docs/content/rules/<slug>.mdx` with Fumadocs frontmatter derived from the rule's `title` and body.
+
+**4. Commit both files:**
+
+```bash
+git add .kody/rules/<slug>.md apps/docs/content/rules/<slug>.mdx
+git commit -m "feat(.kody): add <slug> rule"
+```
+
+The `lefthook` pre-commit hook runs `piltover rules sync-docs` automatically on any staged change under `.kody/rules/**`, so step 3 is handled for you if you forget.
+
+## Existing rules
+
+Browse the current rule catalogue at [/rules](/rules). Fumadocs lists the contents of the `rules/` folder automatically.

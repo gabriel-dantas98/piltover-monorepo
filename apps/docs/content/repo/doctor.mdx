@@ -1,0 +1,65 @@
+---
+title: "piltover doctor"
+description: "Verify your local toolchain is ready for the repo."
+---
+
+# piltover doctor
+
+`piltover doctor` inspects the local environment and prints a coloured pass/fail report for every tool the repository depends on. It is the canonical first step after cloning — running it before anything else tells you exactly what is missing and what each missing tool would block.
+
+## What it checks
+
+| Tool | Threshold | What it unblocks |
+|---|---|---|
+| `go` | ≥ 1.23 | Engine build (`make tools`), Go CLIs, Go apps |
+| `node` | ≥ 22 | TypeScript apps, packages, opencode plugins |
+| `bun` | any (optional) | Fast TS runner; falls back to `npm`/`npx` if absent |
+| `python` + `uv` | python ≥ 3.12, uv ≥ 0.4 | Python libraries and AWS Lambdas |
+| `tofu` | ≥ 1.8 | All IaC (`piltover tf`) |
+| `docker` | engine running | Local stacks (`piltover stacks`), OCI builds |
+| `git` | ≥ 2.40 | Required everywhere |
+| `lefthook` | any | Commit hooks (commitlint, lint-staged) |
+| `aws` | any (optional) | Applying IaC via `piltover tf` |
+| `gh` | any (optional) | PR helpers, release workflows |
+
+## Output modes
+
+**Default (text):** one line per tool with a `✓` or `✗` prefix, plus a version string for passing tools and a short hint for failing ones.
+
+```
+✓ go        1.23.4
+✓ node      22.3.0
+✓ bun       1.1.18  (optional)
+✗ python    not found — needed for Python libs and Lambdas
+✓ tofu      1.8.1
+✓ docker    running
+✓ git       2.45.0
+✓ lefthook  1.7.2
+✗ aws       not found  (optional)
+✗ gh        not found  (optional)
+```
+
+**JSON (`--json`):** machine-readable output for use in scripts or CI steps.
+
+```json
+{
+  "go":       { "ok": true,  "version": "1.23.4",  "optional": false },
+  "node":     { "ok": true,  "version": "22.3.0",  "optional": false },
+  "bun":      { "ok": true,  "version": "1.1.18",  "optional": true  },
+  "python":   { "ok": false, "version": "",        "optional": false },
+  "tofu":     { "ok": true,  "version": "1.8.1",   "optional": false },
+  "docker":   { "ok": true,  "version": "",        "optional": false },
+  "git":      { "ok": true,  "version": "2.45.0",  "optional": false },
+  "lefthook": { "ok": true,  "version": "1.7.2",   "optional": false },
+  "aws":      { "ok": false, "version": "",        "optional": true  },
+  "gh":       { "ok": false, "version": "",        "optional": true  }
+}
+```
+
+## First-run after clone
+
+```bash
+make tools && piltover doctor
+```
+
+Build the engine first so `piltover` is on your `$PATH`, then run `doctor`. Optional tools (`bun`, `aws`, `gh`) will show as warnings, not failures.

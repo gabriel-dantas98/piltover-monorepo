@@ -1,0 +1,16 @@
+{
+  "title": "Piltover",
+  "pages": [
+    "index",
+    "---Repo---",
+    "repo/structure",
+    "repo/engine",
+    "repo/doctor",
+    "repo/conventions",
+    "---Guides---",
+    "guides/getting-started",
+    "guides/adding-a-rule",
+    "---Rules---",
+    "rules"
+  ]
+}

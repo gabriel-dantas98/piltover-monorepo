@@ -1,8 +1,54 @@
 ---
-title: Piltover
-description: A polyglot workshop for AI, SRE, and side projects.
+title: "Piltover"
+description: "A polyglot workshop for AI, SRE, and side projects — engineered as a thin-layer monorepo."
 ---
 
 # Piltover
 
-A polyglot workshop for AI, SRE, and side projects — engineered as a thin-layer monorepo.
+Piltover is a public, polyglot monorepo for a solo full-stack maker focused on AI and SRE — a single GitHub repository that houses every software artifact: Go CLIs, TypeScript packages, mini-apps, Kody rules, GitHub Actions, OpenTofu modules, and local docker-compose stacks. Rather than forcing every subproject into a single build graph, it uses a **thin engine** (`piltover`) that standardises discovery, lint, test, and CI orchestration while letting each subproject remain nearly autonomous. The result is the developer-experience of a monorepo without the build-system complexity of one.
+
+## What's inside
+
+| Folder | Purpose |
+|---|---|
+| `apps/` | Deployable mini-apps (web + backend). |
+| `packages/` | Publishable libraries (npm, pypi, cargo, go mod). |
+| `clis/` | Standalone CLIs. |
+| `tools/` | The `piltover` engine and shared lint/format configs. |
+| `infra-as-code/` | OpenTofu modules and shared bootstrap stacks. |
+| `docs/` | Fumadocs site (Next.js). |
+| `.kody/rules/` | Kody Custom Rules consumed by Kodus PR review. |
+| `ci-cd-actions/` | GitHub Composite Actions reused across workflows. |
+| `docker-stacks/` | Local-only docker-compose stacks. |
+| `ai-marketplace/` | Reserved for future multi-target plugin work. |
+
+## Quickstart
+
+Build the engine:
+
+```bash
+make tools
+```
+
+Verify your local toolchain:
+
+```bash
+piltover doctor
+```
+
+List every discovered subproject:
+
+```bash
+piltover ls
+```
+
+`make tools` compiles the Go engine and installs the `piltover` binary into your `$GOBIN`. `piltover doctor` checks that all required tools (Go, Node, Python, Docker, etc.) meet version thresholds. `piltover ls` walks the repo, finds every `project.yaml`, and prints a table of subprojects with their kind, language, and tags.
+
+## Where to next
+
+- [Repo structure](/repo/structure)
+- [The engine](/repo/engine)
+- [Doctor](/repo/doctor)
+- [Conventions](/repo/conventions)
+- [Getting started guide](/guides/getting-started)
+- [Adding a Kody rule](/guides/adding-a-rule)

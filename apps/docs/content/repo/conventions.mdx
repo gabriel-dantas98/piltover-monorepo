@@ -1,0 +1,43 @@
+---
+title: "Conventions"
+description: "Commits, branches, secrets, and engine logging."
+---
+
+# Conventions
+
+## Commits
+
+All commits follow [Conventional Commits](https://www.conventionalcommits.org/): a structured prefix (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`, `ci:`, `build:`, `perf:`) with an optional scope in parentheses — for example `feat(tools/cli): add --json flag`.
+
+Enforcement is automatic: `lefthook` installs a `commit-msg` hook that runs `commitlint` on every commit. If the message does not match the Conventional Commits schema the commit is rejected immediately with a clear error. Install the hooks after cloning with `lefthook install` (run automatically by `make tools`).
+
+## Branches
+
+Branches are **short-lived**. Open a branch for a feature or fix, keep it focused, and merge it. `main` is a protected branch: direct pushes are blocked; all changes arrive via pull request.
+
+**Merge strategy: squash-merge only.** All commits on a feature branch are squashed into a single commit on `main`. This keeps the main history linear and readable, and it means the squash commit message (which should follow Conventional Commits) is the canonical record of the change.
+
+## Secrets
+
+**No static AWS keys. Ever.** All GitHub Actions CI workflows authenticate to AWS via OIDC + `assume-role`. The IAM role is created by `infra-as-code/shared/github-oidc-provider/` and grants only the permissions needed for the workflow. `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` do not exist in GitHub Secrets for this repository.
+
+Application secrets (database URLs, API tokens) travel through environment variables set in the hosting platform (GitHub Actions secrets, Vercel env vars) and are never committed to the repository.
+
+## Logging discipline
+
+Any script, wrapper, or engine command that spawns an external process **must** log the command to stderr before executing it, in the form:
+
+```
+→ [<project-relative-path>] $ <full command with args>
+```
+
+This is not a style suggestion — it is a hard requirement enforced by the Kody rule `always-log-commands` and documented in `AGENTS.md`. The canonical implementation lives in `tools/internal/runner/`; new wrappers should call it rather than using `exec.Command` directly.
+
+See [The engine](/repo/engine) for the `--quiet`, `--verbose`, and `--dry-run` flags that control this output.
+
+## License
+
+| Artifact | License |
+|---|---|
+| Code (`tools/`, `apps/`, `clis/`, `packages/`, `ci-cd-actions/`, `infra-as-code/`) | Apache-2.0 |
+| Docs and content (`docs/`, `.kody/rules/`) | CC-BY-4.0 |

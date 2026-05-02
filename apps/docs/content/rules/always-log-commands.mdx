@@ -17,7 +17,9 @@ import { Card } from 'fumadocs-ui/components/card';
 Any helper, runner, or wrapper that spawns an external process MUST print to stderr,
 before invoking the process, the exact command in the form:
 
-    → [<cwd>] $ <name> <args...>
+```
+→ [<cwd>] $ <name> <args...>
+```
 
 The contract honours `--quiet` (suppress the line), `--verbose` (also print env vars),
 and `--dry-run` (print but skip execution). The runner package at
