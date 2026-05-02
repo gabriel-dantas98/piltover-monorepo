@@ -1,0 +1,45 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Node
+node_modules/
+.pnpm-store/
+.turbo/
+.next/
+dist/
+build/
+.env
+.env.local
+*.log
+
+# Go
+tools/bin/
+*.test
+*.out
+coverage.txt
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.uv-cache/
+
+# Tofu / Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfplan
+crash.log
+
+# Docker
+*.pid
+
+# Lefthook
+.lefthook/

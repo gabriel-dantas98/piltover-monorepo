@@ -1,0 +1,11 @@
+{
+  "name": "piltover-monorepo-root",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Root package — holds devDeps for commitlint only.",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0"
+  }
+}

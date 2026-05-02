@@ -1,0 +1,26 @@
+# Default lint/test/build commands per language. Project-level project.yaml
+# entries override these on a per-field basis.
+go:
+  lint: golangci-lint run ./...
+  test: go test ./...
+  build: go build ./...
+ts:
+  lint: bun run lint
+  test: bun run test
+  build: bun run build
+python:
+  lint: uv run ruff check .
+  test: uv run pytest
+  build: uv build
+hcl:
+  lint: tflint
+  test: ""
+  build: tofu validate
+shell:
+  lint: shellcheck **/*.sh
+  test: ""
+  build: ""
+none:
+  lint: ""
+  test: ""
+  build: ""
