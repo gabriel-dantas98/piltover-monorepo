@@ -1,0 +1,49 @@
+name: main
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: List projects
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: ./ci-cd-actions/setup-piltover
+
+      - id: matrix
+        shell: bash
+        run: |
+          echo "→ [.] $ piltover affected --base HEAD~1"
+          matrix="$(piltover affected --base HEAD~1)"
+          if echo "${matrix}" | jq -e '.include | length == 0' >/dev/null; then
+            echo "→ [.] $ piltover ls --json (fallback: full sweep)"
+            matrix="$(piltover ls --json)"
+          fi
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+
+  ci:
+    name: ci
+    needs: discover
+    if: ${{ fromJson(needs.discover.outputs.matrix).include[0] != null }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
+    uses: ./.github/workflows/reusable-ci.yml
+    with:
+      project_path: ${{ matrix.path }}
+      project_name: ${{ matrix.name }}
+      language: ${{ matrix.language }}
