@@ -1,0 +1,47 @@
+name: Setup piltover
+description: Build and cache the piltover engine binary, then expose it on PATH.
+
+inputs:
+  go-version:
+    description: Go version to install. Leave empty to read tools/go.mod.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+        go-version-file: ${{ inputs.go-version == '' && 'tools/go.mod' || '' }}
+        cache-dependency-path: tools/go.sum
+
+    - name: Resolve cache key
+      id: key
+      shell: bash
+      run: |
+        key="piltover-bin-$(find tools/cmd tools/internal -type f -name '*.go' -print0 2>/dev/null | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)-$(sha256sum tools/go.sum | cut -c1-16)"
+        echo "key=${key}" >> "$GITHUB_OUTPUT"
+
+    - name: Restore engine binary cache
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: tools/bin/piltover
+        key: ${{ steps.key.outputs.key }}
+
+    - name: Build engine if cache miss
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: tools
+      run: |
+        echo "→ [.] $ go build -o ./bin/piltover ./cmd/piltover"
+        go build -o ./bin/piltover ./cmd/piltover
+
+    - name: Expose binary on PATH
+      shell: bash
+      run: |
+        echo "${GITHUB_WORKSPACE}/tools/bin" >> "$GITHUB_PATH"
+        echo "→ [.] $ piltover --version"
+        "${GITHUB_WORKSPACE}/tools/bin/piltover" --version
