@@ -1,0 +1,38 @@
+name: piltover affected
+description: Run `piltover affected --base <ref>` and expose the JSON matrix as outputs.
+
+inputs:
+  base:
+    description: Git ref to diff HEAD against.
+    required: false
+    default: origin/main
+
+outputs:
+  matrix:
+    description: JSON object {"include":[...]} suitable for `strategy.matrix`.
+    value: ${{ steps.run.outputs.matrix }}
+  has_projects:
+    description: '"true" if at least one project is affected, else "false".'
+    value: ${{ steps.run.outputs.has_projects }}
+
+runs:
+  using: composite
+  steps:
+    - name: Ensure base ref is fetched
+      shell: bash
+      run: |
+        echo "→ [.] $ git fetch --no-tags --depth=50 origin ${{ inputs.base }}"
+        git fetch --no-tags --depth=50 origin ${{ inputs.base }} 2>/dev/null || true
+
+    - name: Run piltover affected
+      id: run
+      shell: bash
+      run: |
+        echo "→ [.] $ piltover affected --base ${{ inputs.base }}"
+        matrix="$(piltover affected --base ${{ inputs.base }})"
+        echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+        if echo "${matrix}" | jq -e '.include | length > 0' >/dev/null; then
+          echo "has_projects=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_projects=false" >> "$GITHUB_OUTPUT"
+        fi
