@@ -53,9 +53,7 @@ jobs:
   docs-build:
     name: docs (build only)
     needs: affected
-    if: |
-      needs.affected.outputs.has_projects == 'true' &&
-      contains(fromJson(needs.affected.outputs.matrix).include.*.path, 'apps/docs')
+    if: ${{ needs.affected.outputs.has_projects == 'true' && contains(needs.affected.outputs.matrix, '"path":"apps/docs"') }}
     uses: ./.github/workflows/reusable-docs-deploy.yml
     with:
       base_path: /piltover-monorepo
