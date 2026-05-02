@@ -3,9 +3,7 @@ TOOLS_BIN := tools/bin
 PILTOVER := $(TOOLS_BIN)/piltover
 
 .PHONY: tools
-tools: $(PILTOVER)
-
-$(PILTOVER):
+tools:
 	@mkdir -p $(TOOLS_BIN)
 	@echo "→ [.] $$ go build -o $(PILTOVER) ./tools/cmd/piltover"
 	@cd tools && go build -o ../$(PILTOVER) ./cmd/piltover
