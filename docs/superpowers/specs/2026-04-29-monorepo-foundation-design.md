@@ -368,12 +368,33 @@ flowchart LR
   Fumadocs --> CFront[CloudFront + S3]
 ```
 
-### 7.4 Hosting
+### 7.4 Hosting — GitHub Pages (revised 2026-05-02)
 
-`next build` with `output: 'export'` → static assets → S3 + CloudFront, provisioned by
-`apps/docs/infra/` consuming `infra-as-code/modules/s3-static-site/`. Custom subdomain
-under the user's domain. Deploy on every merge to `main` via
+**Decision (revised):** the docs site hosts on **GitHub Pages**, not S3 + CloudFront.
+
+`next build` with `output: 'export'` → static assets uploaded via
+`actions/upload-pages-artifact@v3` and deployed by `actions/deploy-pages@v4`. Custom
+domain (optional) configured via a `CNAME` file in `docs/public/`. HTTPS is automatic
+(Let's Encrypt). Deploy runs on every merge to `main` via
 `.github/workflows/reusable-docs-deploy.yml`.
+
+**Why the revision (vs the original AWS-maximalist plan):**
+
+- Cost: free vs ~$1-5/month for CloudFront + S3 + Route53.
+- Setup: zero infrastructure vs OpenTofu module + OIDC + state backend + ACM cert.
+- Decouples Plan 3 from Plan 4 (no longer blocks on OpenTofu modules existing).
+- The docs site has no runtime needs (pure static), so the AWS-maximalist principle
+  pays for nothing concrete here.
+- Migration path stays open: Fumadocs `output: 'export'` is portable. If a future
+  need (private docs, custom edge logic, A/B tests) demands moving off Pages,
+  swapping the deploy step is the only change.
+
+**The AWS-maximalist principle (§2 item 6) still applies to everything else** —
+mini-apps, queues, lambdas, blob storage, IaC backend. GitHub Pages is a single,
+scoped exception for the documentation site.
+
+The unused `infra-as-code/modules/s3-static-site/` module remains available in the
+catalogue for any future static site that needs CloudFront-grade edge controls.
 
 ---
 
