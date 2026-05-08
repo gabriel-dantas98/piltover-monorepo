@@ -1,0 +1,61 @@
+name: reusable-docs-deploy
+
+on:
+  workflow_call:
+    inputs:
+      base_path:
+        description: Pages base path (e.g. `/piltover-monorepo`).
+        required: false
+        type: string
+        default: /piltover-monorepo
+      deploy:
+        description: Whether to deploy (true) or only build (false, for PR previews).
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install
+        working-directory: apps/docs
+        run: bun install --frozen-lockfile
+      - name: Build
+        working-directory: apps/docs
+        env:
+          PAGES_BASE_PATH: ${{ inputs.base_path }}
+        run: |
+          echo "→ [apps/docs] $ bun run build"
+          bun run build
+      - name: Upload Pages artifact
+        if: inputs.deploy
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/docs/out
+
+  deploy:
+    name: deploy
+    if: inputs.deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

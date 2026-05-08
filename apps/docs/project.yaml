@@ -1,0 +1,10 @@
+name: piltover-docs
+kind: app
+language: ts
+tags: [docs, public]
+commands:
+  lint: bun run lint
+  test: bun run typecheck
+  build: bun run build
+release:
+  strategy: none

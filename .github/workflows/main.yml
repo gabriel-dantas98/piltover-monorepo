@@ -47,3 +47,12 @@ jobs:
       project_path: ${{ matrix.path }}
       project_name: ${{ matrix.name }}
       language: ${{ matrix.language }}
+
+  docs:
+    name: docs
+    needs: ci
+    if: ${{ always() && (needs.ci.result == 'success' || needs.ci.result == 'skipped') }}
+    uses: ./.github/workflows/reusable-docs-deploy.yml
+    with:
+      base_path: /piltover-monorepo
+      deploy: true

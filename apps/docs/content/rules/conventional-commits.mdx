@@ -1,0 +1,21 @@
+---
+title: "Use Conventional Commits"
+description: "Every commit follows Conventional Commits: `feat:`, `fix:`, `docs:`, `chore:`,"
+---
+
+import { Card } from 'fumadocs-ui/components/card';
+
+<Card title="Kody Rule" description="Lives at .kody/rules/conventional-commits.md">
+- **Scope:** commit
+- **Severity ≥** medium
+- **Paths:** `**/*`
+- **Languages:** go, ts, python, hcl, shell
+- **Buckets:** style-conventions
+- **Enabled:** true
+</Card>
+
+Every commit follows Conventional Commits: `feat:`, `fix:`, `docs:`, `chore:`,
+`refactor:`, `test:`, `ci:`, `build:`, `perf:`, with an optional scope in
+parentheses (e.g. `feat(tools/cli): add --json flag`). Commitlint enforces the
+header rules; the `lefthook commit-msg` hook runs it locally on every commit.
+
