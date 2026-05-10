@@ -55,4 +55,3 @@ jobs:
     uses: ./.github/workflows/reusable-docs-deploy.yml
     with:
       base_path: /piltover-monorepo
-      deploy: true
