@@ -29,6 +29,24 @@ jobs:
 
       - uses: ./ci-cd-actions/setup-piltover
 
+      - name: Set up Bun (if TS project)
+        if: inputs.language == 'ts'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install TS deps (if TS project)
+        if: inputs.language == 'ts'
+        shell: bash
+        working-directory: ${{ inputs.project_path }}
+        run: |
+          echo "→ [${{ inputs.project_path }}] $ bun install --frozen-lockfile"
+          bun install --frozen-lockfile
+
+      - name: Set up uv (if Python project)
+        if: inputs.language == 'python'
+        uses: astral-sh/setup-uv@v3
+
       - name: Verify go.mod tidy (if Go project)
         if: inputs.language == 'go'
         shell: bash
