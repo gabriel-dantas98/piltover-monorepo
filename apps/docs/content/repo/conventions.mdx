@@ -33,7 +33,7 @@ Any script, wrapper, or engine command that spawns an external process **must** 
 
 This is not a style suggestion — it is a hard requirement enforced by the Kody rule `always-log-commands` and documented in `AGENTS.md`. The canonical implementation lives in `tools/internal/runner/`; new wrappers should call it rather than using `exec.Command` directly.
 
-See [The engine](/repo/engine) for the `--quiet`, `--verbose`, and `--dry-run` flags that control this output.
+See [The engine](/docs/repo/engine) for the `--quiet`, `--verbose`, and `--dry-run` flags that control this output.
 
 ## License
 
