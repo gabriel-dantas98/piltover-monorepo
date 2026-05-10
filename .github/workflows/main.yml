@@ -52,6 +52,10 @@ jobs:
     name: docs
     needs: ci
     if: ${{ always() && (needs.ci.result == 'success' || needs.ci.result == 'skipped') }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: ./.github/workflows/reusable-docs-deploy.yml
     with:
       base_path: /piltover-monorepo
