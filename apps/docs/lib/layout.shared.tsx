@@ -1,10 +1,10 @@
-import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
-      title: 'Piltover',
+      title: "Piltover",
     },
-    githubUrl: 'https://github.com/gabriel-dantas98/piltover-monorepo',
+    githubUrl: "https://github.com/gabriel-dantas98/piltover-monorepo",
   };
 }
