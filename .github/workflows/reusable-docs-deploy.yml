@@ -4,15 +4,16 @@ on:
   workflow_call:
     inputs:
       base_path:
-        description: Pages base path (e.g. `/piltover-monorepo`).
+        description: Pages base path used as PAGES_BASE_PATH at build time.
         required: false
         type: string
         default: /piltover-monorepo
-      deploy:
-        description: Whether to deploy (true) or only build (false, for PR previews).
-        required: false
-        type: boolean
-        default: true
+
+# This workflow assumes GitHub Pages is enabled on the repo with
+# "GitHub Actions" as the source. The `environment: github-pages`
+# block requires Pages to be enabled — otherwise GitHub rejects this
+# workflow at startup. For a build-only validation that does NOT
+# require Pages enabled, use reusable-docs-build.yml instead.
 
 jobs:
   build:
@@ -36,14 +37,12 @@ jobs:
           echo "→ [apps/docs] $ bun run build"
           bun run build
       - name: Upload Pages artifact
-        if: inputs.deploy
         uses: actions/upload-pages-artifact@v3
         with:
           path: apps/docs/out
 
   deploy:
     name: deploy
-    if: inputs.deploy
     needs: build
     runs-on: ubuntu-latest
     permissions:

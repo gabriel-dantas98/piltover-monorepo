@@ -1,0 +1,32 @@
+name: reusable-docs-build
+
+on:
+  workflow_call:
+    inputs:
+      base_path:
+        description: Pages base path used as PAGES_BASE_PATH at build time.
+        required: false
+        type: string
+        default: /piltover-monorepo
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install
+        working-directory: apps/docs
+        run: bun install --frozen-lockfile
+      - name: Build
+        working-directory: apps/docs
+        env:
+          PAGES_BASE_PATH: ${{ inputs.base_path }}
+        run: |
+          echo "→ [apps/docs] $ bun run build"
+          bun run build
