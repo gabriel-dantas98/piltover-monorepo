@@ -1,13 +1,16 @@
 # AGENTS.md
 
 This file is the source of truth for any coding agent (Claude Code, Codex, Aider,
-opencode, Cursor) working in this repository.
+opencode, Cursor) working in this repository. If an agent supports an `AGENTS.md`
+convention, it should read this file before its first action.
 
 ## What this repo is
 
 Piltover is a public, polyglot monorepo for a solo full-stack maker focused on AI and
 SRE. It is **not** a strict monorepo: subprojects are nearly autonomous and share a
 thin engine (`piltover`) for discovery, lint, test, build, and CI orchestration.
+
+Live documentation site: <https://gabriel-dantas98.github.io/piltover-monorepo/docs/>
 
 ## Repo layout
 
@@ -26,37 +29,39 @@ graph TD
   Root --> GH[.github/]
 ```
 
-| Folder | Purpose |
-|---|---|
-| `tools/` | The `piltover` Go engine plus shared lint/format/test configs. |
-| `apps/` | Deployable mini-apps. Each has its own `infra/` with OpenTofu. |
-| `packages/` | Publishable libraries. |
-| `clis/` | Standalone CLIs. |
-| `infra-as-code/modules/` | Reusable OpenTofu child modules, version-tagged. |
-| `infra-as-code/shared/` | Apply-once bootstrap stacks (OIDC, ECR, route53). |
-| `docs/` | Fumadocs site. Top-level by design (not under `apps/`). |
-| `.kody/rules/` | Kody Custom Rules consumed by the Kodus PR reviewer. |
-| `ci-cd-actions/` | Composite GitHub Actions. Reusable workflows live in `.github/workflows/`. |
-| `docker-stacks/` | Local-only docker-compose stacks for development. |
-| `ai-marketplace/` | Reserved for future multi-target plugin work; empty in v0. |
+| Folder | Purpose | Status |
+|---|---|---|
+| `tools/` | The `piltover` Go engine + shared lint/format configs. | productized |
+| `apps/docs/` | Public Fumadocs site, deployed to GitHub Pages. | productized |
+| `apps/` | Other deployable mini-apps. Each owns its `infra/`. | scaffold only |
+| `packages/` | Publishable libraries. | scaffold only |
+| `clis/` | Standalone CLIs. | scaffold only |
+| `infra-as-code/modules/` | Reusable OpenTofu child modules, version-tagged. | deferred (Plan 4) |
+| `infra-as-code/shared/` | Apply-once bootstrap stacks (OIDC, ECR, route53). | deferred (Plan 4) |
+| `docs/superpowers/` | Foundation spec + implementation plans. | productized |
+| `.kody/rules/` | Kody Custom Rules consumed by the Kodus PR reviewer. | productized (2 rules) |
+| `.github/workflows/` | Entry workflows (`pr`, `main`) + reusable workflows. | productized |
+| `ci-cd-actions/` | Composite GitHub Actions (`setup-piltover`, `piltover-affected`). | productized |
+| `docker-stacks/` | Local-only docker-compose stacks. | deferred (Plan 5) |
+| `ai-marketplace/` | Future multi-target agent plugins. | placeholder |
 
 ## The `piltover` engine
 
-Build it with `make tools`. Then:
+Build it with `make tools`. The binary lands at `tools/bin/piltover` and is gitignored.
 
-| Command | What it does |
-|---|---|
-| `piltover ls` | List every subproject (kind, language, tags). |
-| `piltover lint [paths...]` | Run lint for affected (or specified) projects. |
-| `piltover test [paths...]` | Run tests. |
-| `piltover build [paths...]` | Run build. |
-| `piltover ci` | lint + test + build, JSON-friendly output. |
-| `piltover affected --base <ref>` | Emit JSON matrix of touched projects. |
-| `piltover doctor` | Check required toolchains. |
-| `piltover new <kind> <name>` | Scaffold a subproject. |
-| `piltover tf <target> <action>` | Wrap `tofu` (Plan 4). |
-| `piltover stacks ls\|up\|down\|nuke <name>` | Wrap `docker compose` (Plan 5). |
-| `piltover rules ls\|lint\|sync-docs` | Manage Kody rules (Plan 5). |
+| Command | What it does | Status |
+|---|---|---|
+| `piltover ls [--json]` | List every subproject. `--json` emits a matrix-shaped JSON. | productized |
+| `piltover lint [paths...]` | Run lint for affected (or specified) projects. | productized |
+| `piltover test [paths...]` | Run tests. | productized |
+| `piltover build [paths...]` | Run build. | productized |
+| `piltover ci` | lint + test + build across every project. | productized |
+| `piltover affected --base <ref>` | Emit JSON matrix of projects touched since `<ref>`. | productized |
+| `piltover doctor [--json]` | Probe required toolchains (go, node, bun, uv, tofu, ...). | productized |
+| `piltover rules ls\|lint\|sync-docs` | Manage Kody rules + project them into the docs site. | productized |
+| `piltover new <kind> <name>` | Scaffold a subproject. | stub |
+| `piltover tf <target> <action>` | Wrap `tofu`. | stub (Plan 4) |
+| `piltover stacks ls\|up\|down\|nuke <name>` | Wrap `docker compose`. | stub (Plan 5) |
 
 ### Logging contract (HARD requirement)
 
@@ -67,47 +72,102 @@ Before invoking any external command, `piltover` prints to stderr:
 ```
 
 `--verbose` adds env vars; `--quiet` hides the arrow lines; `--dry-run` prints them
-and exits.
+and exits. If a command fails, copy the logged line and run it directly to debug —
+the engine is a transparent wrapper. The runner package
+`tools/internal/runner` is the canonical implementation; **never** call
+`exec.Command` outside it without honouring the same contract.
 
-If a command fails, copy the logged line and run it directly to debug — the engine is a
-transparent wrapper.
+## For AI agents
+
+### Surfaces you can read
+
+| Surface | Where | What it gives you |
+|---|---|---|
+| This file | `/AGENTS.md` | Repo layout, engine commands, conventions, don'ts. |
+| Kody rules | `.kody/rules/**/*.md` | Hand-written conventions (YAML frontmatter + body). |
+| Docs site | <https://gabriel-dantas98.github.io/piltover-monorepo/docs/> | Same rules + guides + repo overview, browseable. |
+| Spec / plans | `docs/superpowers/{specs,plans}/` | Design decisions and implementation plans. |
+
+If an agent reads this file, it should also walk `.kody/rules/` for the project's
+written conventions. The docs site renders both for humans.
+
+### How to use the engine
+
+```bash
+# First-time setup on a fresh clone
+make tools          # builds tools/bin/piltover
+piltover doctor     # verifies your local toolchain
+piltover ls         # lists every discovered subproject
+
+# Work loop
+piltover lint <path>     # or 'piltover ci' for everything
+piltover test <path>
+piltover build <path>
+
+# Before opening a PR
+piltover affected --base origin/main   # what would CI run
+```
+
+The CI on every PR runs only the projects affected by the diff (`pr.yml` → `piltover
+affected` → matrix → `reusable-ci.yml`). `main.yml` runs the full sweep on every
+push, then deploys the docs site.
+
+### Per-target integration
+
+The repo does not (yet) ship vendor-specific plugins. Each agent integrates by reading
+the three surfaces above. Specifically:
+
+- **Claude Code** — drop a `CLAUDE.md` at the project root with `@AGENTS.md` (already
+  done in this repo). Claude reads this file automatically.
+- **Cursor / Windsurf** — `.cursor/rules/*.mdc` is not configured yet; Cursor still
+  honours `AGENTS.md` if you enable the convention. See
+  `apps/docs/content/agents/integrations.mdx` for the per-agent set-up.
+- **Codex / OpenAI Codex** — reads `AGENTS.md` by convention.
+- **Aider** — pass `--read AGENTS.md` or rely on its repo-root auto-include.
+- **opencode** — reads `AGENTS.md` by convention.
 
 ## How to add X
 
 | Add | How |
 |---|---|
-| App | `piltover new app <name>` (scaffolds `apps/<name>/` with `project.yaml`). |
-| CLI | `piltover new cli <name>` (Go default; scaffolds `clis/<name>/`). |
-| Package | `piltover new package <name>` (TS default; scaffolds `packages/<name>/`). |
-| Rule | Add `.kody/rules/<slug>.md` with frontmatter; run `piltover rules lint`. |
-| Docker stack | Add `docker-stacks/<name>/compose.yaml` + `.env.example` + `README.md`. |
-| IaC module | Add `infra-as-code/modules/<name>/` with `main.tf`, tag `infra-modules/<name>/v0.1.0`. |
-| GH Composite Action | Add `ci-cd-actions/<name>/action.yml`. |
+| App | Create `apps/<name>/` with a `project.yaml` (the engine discovers it). Add `infra/` later. |
+| CLI | Create `clis/<name>/` with a `project.yaml`. Go is the default. |
+| Package | Create `packages/<name>/` with a `project.yaml`. TS is the default. |
+| Kody rule | Add `.kody/rules/<slug>.md` with YAML frontmatter. Run `piltover rules lint`, then `piltover rules sync-docs`, then commit both files. |
+| GH composite action | Add `ci-cd-actions/<name>/action.yml` + a `README.md`. |
+| Reusable workflow | Add `.github/workflows/reusable-<name>.yml` (GitHub requires that path). |
+| IaC module | Add `infra-as-code/modules/<name>/main.tf`; tag `infra-modules/<name>/v0.1.0`. (Real flow lands in Plan 4.) |
+| Docker stack | Add `docker-stacks/<name>/compose.yaml` + `.env.example` + `README.md`. (Real flow lands in Plan 5.) |
 
-`piltover new` is stubbed in v0; manual scaffolding is fine until Plan 5.
+`piltover new <kind>` is a stub today — manual scaffolding is fine until it lands.
 
 ## Conventions
 
 - **Commits:** Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, etc.) validated by `lefthook` + `commitlint`.
-- **Branches:** short-lived feature branches; `main` is protected.
-- **Merges:** squash-merge only.
+- **Branches:** short-lived feature branches; `main` is protected; squash-merge only.
 - **Secrets:** never commit. AWS access exclusively via OIDC + assume-role from GitHub Actions. No `AWS_ACCESS_KEY_ID` in GH Secrets, ever.
-- **Logging discipline:** any wrapper script (engine or otherwise) MUST log the underlying command before executing.
+- **Logging discipline:** any wrapper script (engine or otherwise) MUST log the underlying command before executing. The rule is enforced via the `always-log-commands` Kody rule.
+- **CI architecture:** PRs run the affected-only matrix (cheap); `main` runs the full sweep + the docs deploy.
 - **License:** Apache-2.0 for code; CC-BY-4.0 for docs/content.
 
 ## Per-language toolchains
 
-| Language | Lint | Test | Build |
-|---|---|---|---|
-| Go | `golangci-lint run ./...` | `go test ./...` | `go build ./...` |
-| TypeScript | `bun run lint` (biome) | `bun run test` (vitest) | `bun run build` |
-| Python | `uv run ruff check` | `uv run pytest` | `uv build` |
-| HCL | `tflint` + `tofu fmt -check` | n/a | `tofu validate` |
-| Shell | `shellcheck` | n/a | n/a |
+| Language | Lint | Test | Build | Setup in CI |
+|---|---|---|---|---|
+| Go | `golangci-lint run ./...` | `go test -race -count=1 ./...` | `go build ./...` | `setup-piltover` (includes Go). |
+| TypeScript | `bun run lint` (biome) | `bun run test` (vitest) | `bun run build` | `oven-sh/setup-bun@v2` + `bun install`. |
+| Python | `uv run ruff check` | `uv run pytest` | `uv build` | `astral-sh/setup-uv@v3`. |
+| HCL | `tflint` + `tofu fmt -check` | n/a | `tofu validate` | (Plan 4 will add `setup-tofu-aws-oidc`.) |
+| Shell | `shellcheck` | n/a | n/a | preinstalled on `ubuntu-latest`. |
+
+Defaults are declared in `tools/configs/defaults.yaml` and overridable per-project via
+the `commands:` block in `project.yaml`.
 
 ## Don'ts
 
 - Don't run production workloads from `docker-stacks/`. Production lives on AWS via OpenTofu.
-- Don't put `AWS_ACCESS_KEY_ID` in GH Secrets. Use OIDC.
+- Don't put `AWS_ACCESS_KEY_ID` in GitHub Secrets. Use OIDC.
 - Don't `cd` inside scripts; pass paths explicitly so logged commands are reproducible.
 - Don't bypass the engine's logging by calling `exec.Command` directly outside `tools/internal/runner/`.
+- Don't hand-edit `apps/docs/content/rules/*.mdx`. Edit `.kody/rules/*.md` and run `piltover rules sync-docs`.
+- Don't push directly to `main`. Always go through a PR.

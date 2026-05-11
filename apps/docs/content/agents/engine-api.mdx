@@ -1,0 +1,189 @@
+---
+title: Engine command reference
+description: The complete piltover engine surface — every command an agent can invoke, with inputs, outputs, and side effects.
+---
+
+The `piltover` binary is the only entry point an agent needs to operate on this
+repo's subprojects. It is a thin Go wrapper that delegates to native toolchains
+(`go`, `bun`, `uv`, `tofu`, `docker`) — never re-implementing them. Every external
+process spawn is logged to stderr in the form `→ [<cwd>] $ <cmd>` so that an agent
+can always copy the line and reproduce the behaviour directly.
+
+## Global flags
+
+| Flag | Effect |
+|---|---|
+| `--root <path>` | Repository root. Defaults to the current directory. |
+| `--verbose`, `-v` | Also log env vars before each spawn. |
+| `--quiet` | Suppress the `→ [<cwd>] $ <cmd>` log lines. |
+| `--dry-run` | Log every command it would run, but execute none of them. |
+
+These flags work on every subcommand.
+
+## Discovery
+
+### `piltover ls [--json]`
+
+List every subproject discovered in the repo. Without `--json`, prints a
+human-readable tabwriter table. With `--json`, prints `{"include":[...]}` — the shape
+expected by `strategy.matrix` in GitHub Actions, so CI workflows can pipe it directly.
+
+```bash
+piltover ls
+piltover ls --json | jq '.include[] | select(.language == "go")'
+```
+
+A subproject is anything with a `project.yaml` at its root. The discovery walker
+skips `node_modules`, `.git`, `.next`, `.turbo`, `dist`, `build`, `.terraform`,
+`.venv`, `__pycache__`, and `bin`.
+
+### `piltover affected --base <ref>`
+
+Emit the same `{"include":[...]}` shape, but filtered to only the subprojects whose
+files changed since `<ref>`. Used by `pr.yml` to build the CI matrix.
+
+```bash
+piltover affected --base origin/main
+piltover affected --base HEAD~1
+```
+
+Returns `{"include":[]}` (and exit 0) when nothing changed.
+
+## Per-project operations
+
+These run a single command (lint / test / build) for one or many projects. Without
+arguments, they run for every discovered project. With paths, they filter.
+
+### `piltover lint [paths...]`
+
+```bash
+piltover lint                     # everything
+piltover lint apps/docs           # one project
+piltover lint apps/docs clis/foo  # multiple
+```
+
+The actual command run depends on the project's `language` in `project.yaml`:
+
+| Language | Command |
+|---|---|
+| `go` | `golangci-lint run ./...` |
+| `ts` | `bun run lint` |
+| `python` | `uv run ruff check .` |
+| `hcl` | `tflint` |
+| `shell` | `shellcheck **/*.sh` |
+| `none` | (skipped) |
+
+Override per project by adding a `commands:` block to its `project.yaml`:
+
+```yaml title="apps/docs/project.yaml"
+name: piltover-docs
+kind: app
+language: ts
+commands:
+  lint: bun run lint
+  test: bun run typecheck
+  build: bun run build
+```
+
+### `piltover test [paths...]`
+
+Same shape, runs the language-default test command (`go test -race -count=1 ./...`,
+`bun run test`, `uv run pytest`, ...).
+
+### `piltover build [paths...]`
+
+Same shape, runs the language-default build (`go build ./...`, `bun run build`,
+`uv build`, `tofu validate`, ...).
+
+### `piltover ci`
+
+Run `lint`, `test`, and `build` in that order across every discovered project. The
+shortest path to "would CI pass right now?".
+
+## Toolchain probe
+
+### `piltover doctor [--json]`
+
+Walk a list of expected binaries (`go`, `node`, `bun`, `python3`, `uv`, `tofu`,
+`docker`, `git`, `lefthook`, `aws`, `gh`) and report which are present. Useful as a
+first-run gate and as a CI sanity check.
+
+Text output:
+
+```
+  ✓ go         go version go1.23.12 linux/amd64
+  ✓ node       v22.21.1
+  ✓ bun        1.3.10
+  ✗ tofu       exec: "tofu": executable file not found in $PATH
+  ✓ git        git version 2.43.0
+  …
+```
+
+JSON output (`--json`) is an array of `{name, ok, detail}` objects suitable for
+piping into `jq`.
+
+## Kody rules
+
+### `piltover rules ls`
+
+List every rule under `.kody/rules/*.md` with its slug, scope, severity, paths, and
+enabled flag.
+
+### `piltover rules lint`
+
+Validate every rule's YAML frontmatter against the required schema (`title`,
+`scope`, `path`, `severity_min`, `languages`, `buckets`, `enabled`). Exits non-zero
+with a per-rule error message when any rule fails validation.
+
+### `piltover rules sync-docs`
+
+Project every `.kody/rules/<slug>.md` into `apps/docs/content/rules/<slug>.mdx` with a
+Fumadocs-compatible header and the rule body rendered as MDX. Pre-existing `.mdx`
+files under `content/rules/` that no longer have a corresponding rule are deleted —
+the docs are a strict projection.
+
+Run this after editing any rule. The pre-commit hook will eventually do it for you;
+until then, `piltover rules sync-docs && git add apps/docs/content/rules/` is the
+usual flow.
+
+## Stubs (not yet productized)
+
+| Command | Status | Lands in |
+|---|---|---|
+| `piltover new <kind> <name>` | Prints "not implemented in v0". | Plan 5 |
+| `piltover tf <target> <action>` | Prints "not implemented in v0". | Plan 4 |
+| `piltover stacks ls\|up\|down\|nuke <name>` | Prints "not implemented in v0". | Plan 5 |
+
+These intentionally exist as stubs so the CLI surface is stable from day one.
+
+## Calling the engine from a workflow
+
+The repo ships two GitHub composite actions you can `uses:` directly:
+
+- `ci-cd-actions/setup-piltover` — builds the engine on the runner, caches the
+  binary by source hash, exposes it on `$PATH`.
+- `ci-cd-actions/piltover-affected` — runs `piltover affected --base <ref>` and
+  exposes the JSON matrix as a job output (plus a `has_projects` boolean).
+
+Example:
+
+```yaml
+jobs:
+  affected:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.a.outputs.matrix }}
+      has_projects: ${{ steps.a.outputs.has_projects }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: ./ci-cd-actions/setup-piltover
+      - id: a
+        uses: ./ci-cd-actions/piltover-affected
+        with:
+          base: origin/${{ github.event.pull_request.base.ref }}
+```
+
+This is exactly what `.github/workflows/pr.yml` does. Reusable workflows
+(`reusable-ci.yml`, `reusable-docs-build.yml`, `reusable-docs-deploy.yml`) wrap the
+common shapes so per-project workflows stay short.

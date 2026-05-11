@@ -1,0 +1,97 @@
+---
+title: Per-agent integration
+description: How to wire Claude Code, Cursor, Codex, Aider, and opencode so they pick up AGENTS.md and the conventions automatically.
+---
+
+Each agent has its own conventions for discovering project-level instructions. The
+repo standardises on **`AGENTS.md` at the root** and lets each agent pull it in
+through its native mechanism. There is **no** vendor-specific plugin distribution yet
+— that is reserved for the future `ai-marketplace/` work.
+
+## Claude Code (Anthropic)
+
+Already wired. `CLAUDE.md` at the repo root contains a single `@AGENTS.md` import,
+which Claude Code resolves automatically.
+
+```markdown title="CLAUDE.md"
+@AGENTS.md
+
+# Claude-specific overrides
+
+- Use the piltover engine for all repo-aware operations.
+- When unsure of a path, run `piltover ls`.
+- For any wrapper or new tooling you write, follow the logging contract documented in AGENTS.md ("Logging contract").
+```
+
+No further setup is needed. Open the project in Claude Code and the instructions
+load on the first message.
+
+## OpenAI Codex / Codex CLI
+
+Codex reads `AGENTS.md` at the repo root by convention. No action required.
+
+If you use the Codex web UI, the file is picked up when you open the repo. If you use
+the Codex CLI, point it at the project directory and it discovers the file
+automatically.
+
+## Aider
+
+Aider reads files passed via `--read`. The simplest setup is a per-project
+`.aider.conf.yml` (gitignored if it contains personal preferences) that lists
+`AGENTS.md`:
+
+```yaml title=".aider.conf.yml"
+read: AGENTS.md
+```
+
+Or pass `--read AGENTS.md` on the command line. Aider then includes the file in
+every prompt's context.
+
+## opencode
+
+opencode reads `AGENTS.md` at the project root by convention. No further setup is
+required.
+
+If you want richer behaviour, opencode supports JS/TS plugins under
+`.opencode/plugins/`. The repo does not ship one yet — when it does, it will go in
+`ai-marketplace/opencode/<plugin>/` and be published to npm as
+`@<scope>/opencode-plugin-piltover`.
+
+## Cursor (and Windsurf)
+
+Cursor honours `AGENTS.md` if you opt into the convention in Settings → Rules. The
+canonical Cursor format remains `.cursor/rules/*.mdc`, which the repo does **not**
+configure today.
+
+When the per-target marketplace work lands, Cursor users will get a `.cursor/rules/`
+pack distributed via the official Cursor Team Marketplace format
+(`.cursor-plugin/marketplace.json` at the repo root). Until then, the path of least
+resistance is:
+
+1. Open Settings → Rules.
+2. Add `AGENTS.md` as a project rule source.
+3. Cursor will treat it like a `.mdc` rules file.
+
+## Generic agents (anything else)
+
+For any agent that supports a custom system prompt or repo-level context:
+
+1. Copy or import `AGENTS.md` as the system prompt prefix.
+2. Optionally also include `.kody/rules/**/*.md` for the structured conventions.
+3. Point the agent at the engine (`tools/bin/piltover`) so it can list / lint / test
+   / build subprojects without having to memorize per-language toolchains.
+
+## Coming soon
+
+The future `ai-marketplace/` work (sketched in the [foundation
+spec](https://github.com/gabriel-dantas98/piltover-monorepo/blob/main/docs/superpowers/specs/2026-04-29-monorepo-foundation-design.md))
+will add:
+
+- A Claude Code marketplace at `/ai-marketplace/.claude-plugin/marketplace.json` so
+  Claude users can `/plugin marketplace add github.com/gabriel-dantas98/piltover-monorepo`.
+- A Cursor Team Marketplace at `/ai-marketplace/.cursor-plugin/marketplace.json`.
+- Per-target plugins under `/ai-marketplace/claude-code/<plugin>`,
+  `/ai-marketplace/cursor/<rules-pack>`, `/ai-marketplace/opencode/<plugin>`.
+
+Until that ships, the three surfaces — `AGENTS.md`, `.kody/rules/`, and this site —
+are the entire public contract.

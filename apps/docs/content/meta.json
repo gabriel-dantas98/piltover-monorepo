@@ -10,6 +10,10 @@
     "---Guides---",
     "guides/getting-started",
     "guides/adding-a-rule",
+    "---For AI agents---",
+    "agents/index",
+    "agents/integrations",
+    "agents/engine-api",
     "---Rules---",
     "rules"
   ]

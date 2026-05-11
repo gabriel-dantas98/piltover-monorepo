@@ -1,0 +1,43 @@
+---
+title: For AI agents
+description: How coding agents — Claude Code, Cursor, Codex, Aider, opencode — should discover and use this repository.
+---
+
+This site is one of the three surfaces this repo exposes to coding agents. The other
+two are read directly from the repository:
+
+| Surface | Path | Purpose |
+|---|---|---|
+| **`AGENTS.md`** | `/AGENTS.md` at the repo root | Source-of-truth instructions for any agent that respects the `AGENTS.md` convention. |
+| **Kody rules** | `.kody/rules/**/*.md` | Hand-written conventions with YAML frontmatter, parsed by the Kodus PR reviewer and projected into [the rules section](/docs/rules) of this site. |
+| **This site** | `apps/docs/` (Fumadocs, deployed to GitHub Pages) | Human-browseable rendering of the spec, plans, conventions, and rules. |
+
+## Why three surfaces?
+
+An agent that hooks `AGENTS.md` automatically (Claude Code, Codex, Aider, opencode)
+gets the canonical instructions on its first read. An agent that needs structured
+rule data (Kodus) reads `.kody/rules/`. A human or an agent without `AGENTS.md`
+support can browse this site instead.
+
+There is **no transpiler** that compiles between formats — each surface is hand-edited
+(or, for the rules page, projected by `piltover rules sync-docs`).
+
+## What an agent needs to do first
+
+1. Read [`/AGENTS.md`](https://github.com/gabriel-dantas98/piltover-monorepo/blob/main/AGENTS.md).
+2. Skim [the engine reference](/docs/agents/engine-api) for the commands you have at your disposal.
+3. Check the [conventions](/docs/repo/conventions) page before opening a PR.
+4. If you're running locally, do `make tools && piltover doctor` once to verify the toolchain.
+
+The [per-agent integration page](/docs/agents/integrations) lists how to wire up each
+mainstream agent so this file is picked up automatically.
+
+## What this repo is NOT
+
+- It is not a strict monorepo (no shared build graph, no global package manager). Each
+  subproject is autonomous; the engine just orchestrates lint/test/build.
+- It does not (yet) ship vendor-specific plugins. `/ai-marketplace/` is a placeholder
+  for a future plan where the same rules might be published as Claude Code skills,
+  Cursor rule packs, and opencode plugins.
+- It is not production hosting infrastructure. `docker-stacks/` is local-only;
+  production deployments live on AWS via OpenTofu (landing in Plan 4).

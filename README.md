@@ -9,7 +9,13 @@
 <p align="center">
   <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/License-Apache_2.0-blue.svg"></a>
   <a href="https://github.com/gabriel-dantas98/piltover-monorepo/actions"><img alt="CI" src="https://github.com/gabriel-dantas98/piltover-monorepo/actions/workflows/pr.yml/badge.svg"></a>
+  <a href="https://gabriel-dantas98.github.io/piltover-monorepo/docs/"><img alt="Docs" src="https://img.shields.io/badge/docs-fumadocs-7dd3fc.svg"></a>
 </p>
+
+> **For AI agents:** start at [`AGENTS.md`](AGENTS.md), then read
+> [`docs/agents/`](https://gabriel-dantas98.github.io/piltover-monorepo/docs/agents/)
+> for per-agent integration and the full engine command reference. Kody rules at
+> [`.kody/rules/`](.kody/rules/) capture the project's hand-written conventions.
 
 ## What's inside
 
