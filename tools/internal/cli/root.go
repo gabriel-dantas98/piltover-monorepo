@@ -36,7 +36,7 @@ func NewRootCmd() *cobra.Command {
 	root.AddCommand(newCiCmd(g))
 	root.AddCommand(newStubCmd("new", "Scaffold a new subproject (planned)"))
 	root.AddCommand(newStubCmd("tf", "Wrap OpenTofu (Plan 4)"))
-	root.AddCommand(newStubCmd("stacks", "Wrap docker compose (Plan 5)"))
+	root.AddCommand(newStacksCmd(g))
 	root.AddCommand(newRulesCmd(g))
 
 	return root
