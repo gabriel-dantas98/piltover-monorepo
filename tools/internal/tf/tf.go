@@ -17,6 +17,7 @@ type Target struct {
 // Action enumerates supported tofu actions.
 type Action string
 
+// Supported OpenTofu subcommands.
 const (
 	ActionInit     Action = "init"
 	ActionValidate Action = "validate"
