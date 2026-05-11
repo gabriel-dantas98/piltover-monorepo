@@ -204,13 +204,49 @@ piltover new app my-app        # → apps/my-app/
 piltover new stack my-stack    # → docker-stacks/my-stack/
 ```
 
-## Stubs (not yet productized)
+## Infrastructure as Code
 
-| Command | Status | Lands in |
+`piltover tf` is a thin wrapper around `tofu` that applies the repo's logging contract
+before every invocation.
+
+### `piltover tf <action> <target> [-- extra]`
+
+```bash
+piltover tf init    infra-as-code/shared/account-bootstrap
+piltover tf validate infra-as-code/shared/account-bootstrap
+piltover tf plan    infra-as-code/shared/account-bootstrap
+piltover tf apply   infra-as-code/shared/account-bootstrap
+piltover tf destroy infra-as-code/shared/account-bootstrap
+piltover tf fmt     infra-as-code/shared/account-bootstrap
+```
+
+Supported actions: `init`, `validate`, `plan`, `apply`, `destroy`, `fmt`.
+
+Extra flags after `--` are forwarded verbatim to `tofu`:
+
+```bash
+piltover tf init infra-as-code/shared/github-oidc-provider -- \
+  -backend-config="bucket=piltover-tofu-state" \
+  -backend-config="key=shared/github-oidc-provider/terraform.tfstate" \
+  -backend-config="region=us-east-1" \
+  -backend-config="dynamodb_table=piltover-tofu-locks" \
+  -backend-config="encrypt=true"
+```
+
+### What ships today
+
+| Path | Kind | Purpose |
 |---|---|---|
-| `piltover tf <target> <action>` | Prints "not implemented in v0". | Plan 4 |
+| `infra-as-code/shared/account-bootstrap` | root module | S3 state bucket + DynamoDB lock table. Applied once per account. |
+| `infra-as-code/shared/github-oidc-provider` | root module | IAM OIDC provider + GitHub Actions assume-role. Applied once per account. |
+| `infra-as-code/modules/s3-static-site` | child module | CloudFront + S3 + ACM reusable module, tagged `infra-modules/s3-static-site/v0.1.0`. |
 
-This intentionally exists as a stub so the CLI surface is stable from day one.
+Bootstrap stacks (`infra-as-code/shared/*`) are applied **manually exactly once** per
+AWS account — never in CI. See the [Bootstrapping AWS guide](/docs/guides/aws-bootstrap)
+for the step-by-step procedure. For writing new modules, see the
+[Writing OpenTofu modules guide](/docs/guides/writing-tofu-modules).
+
+No remaining stubs in v1. Every command listed above is productized.
 
 ## Calling the engine from a workflow
 

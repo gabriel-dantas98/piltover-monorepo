@@ -1,0 +1,93 @@
+---
+title: "Writing OpenTofu modules"
+description: "Conventions for new reusable modules under infra-as-code/modules/."
+---
+
+# Writing OpenTofu modules
+
+## Where modules live
+
+Reusable modules live under `infra-as-code/modules/<name>/`. Each module is a
+self-contained directory. Module directories are not subprojects (no `project.yaml`)
+— they are discovered and consumed by root modules via `source` references.
+
+## Child vs root modules
+
+Modules under `infra-as-code/modules/` are **child modules**. They must follow two
+rules:
+
+1. **No `backend` block.** Child modules do not declare a backend. The consuming root
+   module owns state.
+2. **No top-level `provider` block.** Providers are configured by the consumer. If
+   your module needs a provider alias (e.g. `aws.us_east_1` for ACM), declare it in
+   `versions.tf` via `configuration_aliases` and document what the consumer must pass.
+
+Root modules — the ones you actually `init` and `apply` — live under
+`infra-as-code/shared/` or `apps/<name>/infra/`. They declare the backend and
+instantiate providers.
+
+## Required files
+
+Every module directory must contain:
+
+| File | Purpose |
+|---|---|
+| `versions.tf` | `terraform { required_version = "..." required_providers { ... } }`. Include `configuration_aliases` for any provider aliases the module expects. |
+| `variables.tf` | All `variable` blocks. Every variable must have a `description`. |
+| `main.tf` | Resources and data sources. |
+| `outputs.tf` | All `output` blocks. Every output must have a `description`. |
+| `README.md` | A usage example referencing the module via its git-tag `ref`. |
+
+## Versioning
+
+Modules are tagged with the pattern `infra-modules/<name>/v<semver>`. Bump the tag
+whenever the module interface changes:
+
+- New required input → minor or major bump.
+- Removed or renamed output → major bump.
+- Internal refactor with no interface change → patch bump.
+
+Tag from the repo root after merging:
+
+```bash
+git tag infra-modules/my-module/v0.2.0
+git push origin infra-modules/my-module/v0.2.0
+```
+
+## Consuming a module
+
+Reference the module via its git-tag `ref` in any root module:
+
+```hcl
+module "site" {
+  source = "git::https://github.com/gabriel-dantas98/piltover-monorepo.git//infra-as-code/modules/s3-static-site?ref=infra-modules/s3-static-site/v0.1.0"
+
+  providers = {
+    aws.us_east_1 = aws.us_east_1
+  }
+
+  domain_name = "docs.example.com"
+  zone_id     = "Z0123456789ABCDEFGHIJ"
+}
+```
+
+The double-slash `//` separates the repository URL from the path within the repo —
+this is required by the `git::` source type.
+
+## Canonical example
+
+The [`s3-static-site`](https://github.com/gabriel-dantas98/piltover-monorepo/tree/main/infra-as-code/modules/s3-static-site)
+module is the canonical template. Read its `versions.tf` (provider alias pattern) and
+`README.md` (usage block) before creating a new module.
+
+## Linting
+
+Run `tofu fmt -check` from inside the module directory before committing:
+
+```bash
+tofu -chdir=infra-as-code/modules/my-module fmt -check
+```
+
+CI does not yet lint HCL automatically — a future plan adds `tflint` and a dedicated
+HCL CI matrix entry. Until then, format manually and treat a clean `fmt -check` as a
+merge gate.

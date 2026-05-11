@@ -1,0 +1,132 @@
+---
+title: "Bootstrapping AWS for OpenTofu"
+description: "One-time manual procedure to create the S3 state backend and the GitHub Actions OIDC role."
+---
+
+# Bootstrapping AWS for OpenTofu
+
+## Why bootstrap manually
+
+Every OpenTofu root module in this repo uses an S3-backed remote state, except for
+the bootstrap stack itself. This is a classic chicken-and-egg problem: the S3 bucket
+and DynamoDB lock table need to exist before any other stack can use them — but they
+can only be created by running a stack. The solution is a one-time, locally-applied
+bootstrap that uses a local state file and must never be migrated to S3.
+
+This means you apply `account-bootstrap` exactly once per AWS account, keep the
+resulting `terraform.tfstate` file local, and then all subsequent stacks use the
+S3 backend it created. See [Conventions](/docs/repo/conventions) for the broader
+stance on secrets and OIDC.
+
+## Prerequisites
+
+- **OpenTofu ≥ 1.8** — verify with `piltover doctor`.
+- **AWS credentials configured locally** with permission to create S3, DynamoDB, and
+  IAM resources. The easiest path is `aws sso login` or a short-lived privileged IAM
+  user. Discard the user after the bootstrap is complete.
+- **AWS CLI** — verify the credentials are active:
+
+```bash
+aws sts get-caller-identity
+```
+
+## Step 1: account-bootstrap
+
+This stack creates the S3 bucket for remote state and the DynamoDB table for state
+locking. It uses a local backend declared in its `versions.tf`.
+
+```bash
+piltover tf init  infra-as-code/shared/account-bootstrap
+piltover tf apply infra-as-code/shared/account-bootstrap
+```
+
+After `apply` completes, capture the three outputs — you will need them in Step 2:
+
+```bash
+tofu -chdir=infra-as-code/shared/account-bootstrap output
+```
+
+Example output:
+
+```
+lock_table         = "piltover-tofu-locks"
+state_bucket       = "piltover-tofu-state"
+state_bucket_region = "us-east-1"
+```
+
+Keep the `infra-as-code/shared/account-bootstrap/terraform.tfstate` file local. Do
+**not** migrate it to S3 — the bucket it would migrate into is one of the resources
+this stack creates.
+
+## Step 2: github-oidc-provider
+
+This stack creates the IAM OIDC provider and the GitHub Actions assume-role. It uses
+the S3 backend that `account-bootstrap` just created, so you pass the backend config
+values at `init` time via `-backend-config` flags forwarded through `--`:
+
+```bash
+# Pull the outputs first (run from the repo root):
+STATE_BUCKET=$(tofu -chdir=infra-as-code/shared/account-bootstrap output -raw state_bucket)
+STATE_REGION=$(tofu -chdir=infra-as-code/shared/account-bootstrap output -raw state_bucket_region)
+LOCK_TABLE=$(tofu -chdir=infra-as-code/shared/account-bootstrap output -raw lock_table)
+
+# Initialise against the S3 backend:
+piltover tf init infra-as-code/shared/github-oidc-provider -- \
+  -backend-config="bucket=${STATE_BUCKET}" \
+  -backend-config="key=shared/github-oidc-provider/terraform.tfstate" \
+  -backend-config="region=${STATE_REGION}" \
+  -backend-config="dynamodb_table=${LOCK_TABLE}" \
+  -backend-config="encrypt=true"
+
+# Apply:
+piltover tf apply infra-as-code/shared/github-oidc-provider
+```
+
+Capture the `role_arn` output:
+
+```bash
+tofu -chdir=infra-as-code/shared/github-oidc-provider output -raw role_arn
+```
+
+## Step 3: Wire the role into workflows
+
+Any GitHub Actions workflow that needs AWS access uses the `setup-tofu-aws-oidc`
+composite action with the `role_arn` captured above:
+
+```yaml
+permissions:
+  id-token: write
+  contents: read
+
+steps:
+  - uses: actions/checkout@v4
+  - uses: ./ci-cd-actions/setup-tofu-aws-oidc
+    with:
+      role_arn: arn:aws:iam::123456789012:role/github-actions-piltover
+      aws_region: us-east-1
+```
+
+The docs site currently deploys to GitHub Pages and does not need this. Future
+AWS-deployed apps (under `apps/<name>/infra/`) will reference this role. Attach
+per-app least-privilege policies to the role before deploying.
+
+## Verifying it worked
+
+```bash
+# S3 bucket exists:
+aws s3 ls | grep piltover-tofu-state
+
+# DynamoDB lock table exists:
+aws dynamodb list-tables --query "TableNames[?contains(@, 'piltover')]"
+
+# OIDC provider registered:
+aws iam list-open-id-connect-providers
+```
+
+## What this does NOT do
+
+- Does not deploy any application.
+- Does not attach least-privilege policies to the GitHub Actions role — that is done
+  per app when its `infra/` stack is first applied.
+- Does not configure ECR or Route 53 — those are separate shared stacks planned for
+  future iterations.

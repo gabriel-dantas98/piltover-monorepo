@@ -27,11 +27,13 @@ make tools
 | `piltover affected --base <ref>` | Emit JSON matrix of touched projects. |
 | `piltover doctor` | Check required toolchains. |
 | `piltover new <kind> <name>` | Scaffold a subproject (`cli`, `package`, `app`, `stack`). |
-| `piltover tf <target> <action>` | Wrap `tofu` (Plan 4 — stub). |
+| `piltover tf <action> <target> [-- extra]` | Wrap `tofu` for OpenTofu stacks. |
 | `piltover stacks ls\|up\|down\|nuke <name>` | Wrap `docker compose` for local-dev stacks. |
 | `piltover rules ls\|lint\|sync-docs` | Manage Kody rules (Plan 5). |
 
 Real stacks (`postgres`, `localstack`) ship under `docker-stacks/` and are managed with `piltover stacks`. See the [local-dev stacks guide](/docs/guides/local-dev-stacks) for usage.
+
+Bootstrap stacks (S3 state backend, GitHub Actions OIDC role) live under `infra-as-code/shared/` and are applied manually once per AWS account. Reusable child modules live under `infra-as-code/modules/`. See the [Bootstrapping AWS guide](/docs/guides/aws-bootstrap) and the [Writing OpenTofu modules guide](/docs/guides/writing-tofu-modules) for details.
 
 ## Logging contract (HARD requirement)
 

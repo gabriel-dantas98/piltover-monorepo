@@ -12,6 +12,8 @@
     "guides/adding-a-rule",
     "guides/local-dev-stacks",
     "guides/scaffold-a-subproject",
+    "guides/aws-bootstrap",
+    "guides/writing-tofu-modules",
     "---For AI agents---",
     "agents/index",
     "agents/integrations",
