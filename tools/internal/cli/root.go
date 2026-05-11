@@ -35,20 +35,9 @@ func NewRootCmd() *cobra.Command {
 	root.AddCommand(newRunCmd(g, "build", "Run build"))
 	root.AddCommand(newCiCmd(g))
 	root.AddCommand(newScaffoldCmd(g))
-	root.AddCommand(newStubCmd("tf", "Wrap OpenTofu (Plan 4)"))
+	root.AddCommand(newTfCmd(g))
 	root.AddCommand(newStacksCmd(g))
 	root.AddCommand(newRulesCmd(g))
 
 	return root
-}
-
-func newStubCmd(name, short string) *cobra.Command {
-	return &cobra.Command{
-		Use:   name,
-		Short: short + " — not yet implemented",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			cmd.PrintErrln(name, "is not implemented in v0; see plan 4/5")
-			return nil
-		},
-	}
 }

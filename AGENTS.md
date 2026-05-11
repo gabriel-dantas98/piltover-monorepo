@@ -36,8 +36,8 @@ graph TD
 | `apps/` | Other deployable mini-apps. Each owns its `infra/`. | scaffold only |
 | `packages/` | Publishable libraries. | scaffold only |
 | `clis/` | Standalone CLIs. | scaffold only |
-| `infra-as-code/modules/` | Reusable OpenTofu child modules, version-tagged. | deferred (Plan 4) |
-| `infra-as-code/shared/` | Apply-once bootstrap stacks (OIDC, ECR, route53). | deferred (Plan 4) |
+| `infra-as-code/modules/` | Reusable OpenTofu child modules, version-tagged. | productized |
+| `infra-as-code/shared/` | Apply-once bootstrap stacks (OIDC, ECR, route53). | productized |
 | `docs/superpowers/` | Foundation spec + implementation plans. | productized |
 | `.kody/rules/` | Kody Custom Rules consumed by the Kodus PR reviewer. | productized (2 rules) |
 | `.github/workflows/` | Entry workflows (`pr`, `main`) + reusable workflows. | productized |
@@ -60,7 +60,7 @@ Build it with `make tools`. The binary lands at `tools/bin/piltover` and is giti
 | `piltover doctor [--json]` | Probe required toolchains (go, node, bun, uv, tofu, ...). | productized |
 | `piltover rules ls\|lint\|sync-docs` | Manage Kody rules + project them into the docs site. | productized |
 | `piltover new <kind> <name>` | Scaffold a subproject. | productized |
-| `piltover tf <target> <action>` | Wrap `tofu`. | stub (Plan 4) |
+| `piltover tf <action> <target> [-- extra]` | Wrap `tofu`. | productized |
 | `piltover stacks ls\|up\|down\|nuke <name>` | Wrap `docker compose`. | productized |
 
 ### Logging contract (HARD requirement)
@@ -169,3 +169,4 @@ the `commands:` block in `project.yaml`.
 - Don't bypass the engine's logging by calling `exec.Command` directly outside `tools/internal/runner/`.
 - Don't hand-edit `apps/docs/content/rules/*.mdx`. Edit `.kody/rules/*.md` and run `piltover rules sync-docs`.
 - Don't push directly to `main`. Always go through a PR.
+- Don't apply `infra-as-code/shared/*` in CI. Those stacks bootstrap the AWS account and are applied manually exactly once with local AWS credentials.
