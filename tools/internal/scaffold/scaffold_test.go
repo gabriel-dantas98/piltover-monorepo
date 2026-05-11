@@ -1,7 +1,6 @@
 package scaffold
 
 import (
-	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -25,12 +24,12 @@ func TestRender_BasicTemplate(t *testing.T) {
 	require.NoError(t, Render(tmplFS, "cli-go", dest, vars))
 
 	// project.yaml rendered
-	data, err := os.ReadFile(filepath.Join(dest, "project.yaml"))
+	data, err := os.ReadFile(filepath.Join(dest, "project.yaml")) //nolint:gosec // test only reads temp dir
 	require.NoError(t, err)
 	assert.Contains(t, string(data), "name: foo")
 
 	// nested path with {{.Name}} resolved, .tmpl suffix removed
-	data, err = os.ReadFile(filepath.Join(dest, "cmd", "foo", "main.go"))
+	data, err = os.ReadFile(filepath.Join(dest, "cmd", "foo", "main.go")) //nolint:gosec // test only reads temp dir
 	require.NoError(t, err)
 	assert.Contains(t, string(data), "hi from foo")
 }
@@ -49,13 +48,7 @@ func TestRender_KeepsNonTmplFilesVerbatim(t *testing.T) {
 	}
 	dest := t.TempDir()
 	require.NoError(t, Render(tmplFS, "stack", dest, Vars{Name: "x", KebabName: "x"}))
-	data, err := os.ReadFile(filepath.Join(dest, "README.md"))
+	data, err := os.ReadFile(filepath.Join(dest, "README.md")) //nolint:gosec // test only reads temp dir
 	require.NoError(t, err)
 	assert.Equal(t, "# Static\n", string(data))
-}
-
-func ensureExists(t *testing.T, root, rel string) {
-	t.Helper()
-	_, err := fs.Stat(os.DirFS(root), rel)
-	require.NoError(t, err)
 }
