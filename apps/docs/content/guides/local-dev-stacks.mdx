@@ -1,0 +1,68 @@
+---
+title: "Local-dev docker stacks"
+description: "Spin up Postgres, LocalStack, and other dependencies locally with piltover stacks."
+---
+
+## What this is
+
+The `docker-stacks/` directory contains local-development-only docker-compose stacks
+managed by `piltover stacks`. These stacks are **never used in production** — production
+workloads run on AWS via OpenTofu. Think of them as lightweight fixtures that let you
+develop and test against real service behaviour without a network dependency. The
+[conventions page](/docs/repo/conventions) covers the broader rule: don't run
+production workloads from `docker-stacks/`.
+
+## How to use
+
+List the available stacks, then bring one up:
+
+```bash
+# See what stacks are available
+piltover stacks ls
+
+# Start Postgres in detached mode
+piltover stacks up postgres
+```
+
+Once the stack is up, connect with any Postgres client:
+
+```
+Host:     localhost
+Port:     5432
+Database: piltover
+User:     piltover
+Password: piltover
+```
+
+## Available stacks today
+
+- **`docker-stacks/postgres/`** — PostgreSQL 16 with a pre-created `piltover` database.
+  Good for any feature that needs a relational store or runs migrations locally.
+- **`docker-stacks/localstack/`** — LocalStack Community edition emulating S3, SQS,
+  and other AWS services locally. Good for testing infra integrations without touching
+  a real AWS account.
+
+## Adding a new stack
+
+Use `piltover new` to scaffold a starter layout:
+
+```bash
+piltover new stack my-service
+# creates docker-stacks/my-service/ with a compose.yaml placeholder
+```
+
+Edit `docker-stacks/my-service/compose.yaml` to add your services, then update
+`.env.example` with the env vars the stack needs and add a brief `README.md`.
+
+## Reset / cleanup
+
+```bash
+# Stop containers but keep volumes (data survives)
+piltover stacks down postgres
+
+# Stop containers AND remove volumes (full reset — destructive)
+piltover stacks nuke postgres
+```
+
+Use `nuke` when you want a clean-slate database or need to clear cached state between
+test runs. Use `down` when you just want to free up ports and memory.

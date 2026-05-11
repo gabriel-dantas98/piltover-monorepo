@@ -42,7 +42,7 @@ graph TD
 | `.kody/rules/` | Kody Custom Rules consumed by the Kodus PR reviewer. | productized (2 rules) |
 | `.github/workflows/` | Entry workflows (`pr`, `main`) + reusable workflows. | productized |
 | `ci-cd-actions/` | Composite GitHub Actions (`setup-piltover`, `piltover-affected`). | productized |
-| `docker-stacks/` | Local-only docker-compose stacks. | deferred (Plan 5) |
+| `docker-stacks/` | Local-only docker-compose stacks. | productized |
 | `ai-marketplace/` | Future multi-target agent plugins. | placeholder |
 
 ## The `piltover` engine
@@ -59,9 +59,9 @@ Build it with `make tools`. The binary lands at `tools/bin/piltover` and is giti
 | `piltover affected --base <ref>` | Emit JSON matrix of projects touched since `<ref>`. | productized |
 | `piltover doctor [--json]` | Probe required toolchains (go, node, bun, uv, tofu, ...). | productized |
 | `piltover rules ls\|lint\|sync-docs` | Manage Kody rules + project them into the docs site. | productized |
-| `piltover new <kind> <name>` | Scaffold a subproject. | stub |
+| `piltover new <kind> <name>` | Scaffold a subproject. | productized |
 | `piltover tf <target> <action>` | Wrap `tofu`. | stub (Plan 4) |
-| `piltover stacks ls\|up\|down\|nuke <name>` | Wrap `docker compose`. | stub (Plan 5) |
+| `piltover stacks ls\|up\|down\|nuke <name>` | Wrap `docker compose`. | productized |
 
 ### Logging contract (HARD requirement)
 
@@ -130,16 +130,14 @@ the three surfaces above. Specifically:
 
 | Add | How |
 |---|---|
-| App | Create `apps/<name>/` with a `project.yaml` (the engine discovers it). Add `infra/` later. |
-| CLI | Create `clis/<name>/` with a `project.yaml`. Go is the default. |
-| Package | Create `packages/<name>/` with a `project.yaml`. TS is the default. |
+| App | Run `piltover new app <name>` (scaffolds `apps/<name>/` with Next.js 16 + `project.yaml`). Add `infra/` later. |
+| CLI | Run `piltover new cli <name>` (scaffolds `clis/<name>/` with Go `cmd/<name>/main.go` + `go.mod`). |
+| Package | Run `piltover new package <name>` (scaffolds `packages/<name>/` with TS `src/index.ts` + biome + vitest). |
 | Kody rule | Add `.kody/rules/<slug>.md` with YAML frontmatter. Run `piltover rules lint`, then `piltover rules sync-docs`, then commit both files. |
 | GH composite action | Add `ci-cd-actions/<name>/action.yml` + a `README.md`. |
 | Reusable workflow | Add `.github/workflows/reusable-<name>.yml` (GitHub requires that path). |
 | IaC module | Add `infra-as-code/modules/<name>/main.tf`; tag `infra-modules/<name>/v0.1.0`. (Real flow lands in Plan 4.) |
-| Docker stack | Add `docker-stacks/<name>/compose.yaml` + `.env.example` + `README.md`. (Real flow lands in Plan 5.) |
-
-`piltover new <kind>` is a stub today — manual scaffolding is fine until it lands.
+| Docker stack | Run `piltover new stack <name>` (creates `docker-stacks/<name>/` with a starter `compose.yaml`), then customise. |
 
 ## Conventions
 

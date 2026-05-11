@@ -146,15 +146,71 @@ Run this after editing any rule. The pre-commit hook will eventually do it for y
 until then, `piltover rules sync-docs && git add apps/docs/content/rules/` is the
 usual flow.
 
+## Local docker-compose stacks
+
+`piltover stacks` is a thin wrapper around `docker compose` for the stacks living in
+`docker-stacks/`. It is for **local development only** — production workloads run on
+AWS via OpenTofu, never via these stacks.
+
+### Subcommands
+
+| Subcommand | Underlying invocation | Notes |
+|---|---|---|
+| `piltover stacks ls` | (no external call) | Lists all directories in `docker-stacks/` that contain a `compose.yaml`. |
+| `piltover stacks up <name>` | `docker compose -f docker-stacks/<name>/compose.yaml up -d` | Starts the stack in detached mode. |
+| `piltover stacks down <name>` | `docker compose -f docker-stacks/<name>/compose.yaml down` | Stops containers, preserves volumes. |
+| `piltover stacks nuke <name>` | `docker compose -f docker-stacks/<name>/compose.yaml down -v` | Stops containers **and removes volumes** (destructive). |
+
+### Shipped stacks
+
+| Stack | Path | What it is |
+|---|---|---|
+| `postgres` | `docker-stacks/postgres/` | PostgreSQL 16 with a pre-created `piltover` database. See its [README](../../../docker-stacks/postgres/README.md). |
+| `localstack` | `docker-stacks/localstack/` | LocalStack Community for local AWS service emulation (S3, SQS, etc.). See its [README](../../../docker-stacks/localstack/README.md). |
+
+```bash
+piltover stacks ls
+piltover stacks up postgres
+piltover stacks down postgres
+piltover stacks nuke postgres     # WARNING: drops volumes
+```
+
+## Scaffolding new subprojects
+
+`piltover new <kind> <name>` renders an embedded template into the appropriate
+top-level folder and writes a `project.yaml` so the engine discovers the new project
+immediately.
+
+The command **refuses to overwrite** an existing destination — run it only against a
+name that does not yet exist. After scaffolding it prints the `piltover ls` and
+`piltover lint <path>` next-step hints.
+
+Names are normalised to kebab-case in `project.yaml`; if you pass `MyTool` it is stored
+as `my-tool`.
+
+### Routing table
+
+| Kind | Destination | Template highlights |
+|---|---|---|
+| `cli` | `clis/<name>/` | Go `cmd/<name>/main.go`, `go.mod`, `project.yaml`, `README.md`. |
+| `package` | `packages/<name>/` | TS `package.json` with biome + vitest, `src/index.ts`, `project.yaml`. |
+| `app` | `apps/<name>/` | Next.js 16 + React 19 stub, `app/page.tsx`, `project.yaml`. |
+| `stack` | `docker-stacks/<name>/` | Minimal `compose.yaml` placeholder, `.env.example`, `project.yaml`. |
+
+```bash
+piltover new cli my-tool       # → clis/my-tool/
+piltover new package my-lib    # → packages/my-lib/
+piltover new app my-app        # → apps/my-app/
+piltover new stack my-stack    # → docker-stacks/my-stack/
+```
+
 ## Stubs (not yet productized)
 
 | Command | Status | Lands in |
 |---|---|---|
-| `piltover new <kind> <name>` | Prints "not implemented in v0". | Plan 5 |
 | `piltover tf <target> <action>` | Prints "not implemented in v0". | Plan 4 |
-| `piltover stacks ls\|up\|down\|nuke <name>` | Prints "not implemented in v0". | Plan 5 |
 
-These intentionally exist as stubs so the CLI surface is stable from day one.
+This intentionally exists as a stub so the CLI surface is stable from day one.
 
 ## Calling the engine from a workflow
 

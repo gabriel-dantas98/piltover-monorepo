@@ -1,0 +1,58 @@
+---
+title: "Scaffold a new subproject"
+description: "Use piltover new to add a CLI, package, app, or docker stack with one command."
+---
+
+## What `piltover new` does
+
+`piltover new <kind> <name>` routes to the appropriate top-level folder by kind,
+renders an embedded Go template with `{{.Name}}` (PascalCase) and `{{.KebabName}}`
+(kebab-case) substitutions, and writes a `project.yaml` so the engine picks up the new
+subproject on the next `piltover ls`. If the destination directory already exists the
+command aborts with an error — it will never overwrite your work. After a successful
+scaffold it prints the suggested next steps: `piltover ls` to confirm discovery and
+`piltover lint <path>` to verify the generated files are clean.
+
+## Supported kinds
+
+| Kind | Destination | Template highlights |
+|---|---|---|
+| `cli` | `clis/<name>/` | Go `cmd/<name>/main.go`, `go.mod`, `project.yaml`, README. |
+| `package` | `packages/<name>/` | TS `package.json` with biome + vitest, `src/index.ts`, `project.yaml`. |
+| `app` | `apps/<name>/` | Next.js 16 + React 19 stub, `app/page.tsx`, `project.yaml`. |
+| `stack` | `docker-stacks/<name>/` | Minimal `compose.yaml` placeholder, `.env.example`, `project.yaml`. |
+
+## Walkthrough
+
+```bash
+# Scaffold a new Go CLI named "demo"
+piltover new cli demo
+
+# Verify it was discovered
+piltover ls
+# demo   cli   go   []   clis/demo
+
+# Run lint to confirm the scaffold is clean
+piltover lint clis/demo
+```
+
+You should see `clis/demo/` with at minimum `cmd/demo/main.go`, `go.mod`, `project.yaml`,
+and `README.md`. Open `cmd/demo/main.go` to start adding your logic.
+
+## Names
+
+Kebab-case is the canonical form stored in `project.yaml`. If you pass a name in
+another casing (e.g. `MyTool`), the engine normalises it to `my-tool` before writing
+`project.yaml` and creating the directory. Always use lower-kebab-case on the command
+line to keep the printed output predictable.
+
+## What is NOT supported yet
+
+The following kinds are not implemented and will return an error if requested:
+
+- `plugin` — multi-target agent plugins (`ai-marketplace/`)
+- `action` — composite GitHub Actions (`ci-cd-actions/`)
+- `infra-module` — OpenTofu child modules (`infra-as-code/modules/`)
+
+These will be added on demand in later plans. Until then, scaffold those manually by
+copying an existing example and updating `project.yaml`.

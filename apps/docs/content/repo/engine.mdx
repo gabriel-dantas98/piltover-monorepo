@@ -26,10 +26,12 @@ make tools
 | `piltover ci` | lint + test + build, JSON-friendly output. |
 | `piltover affected --base <ref>` | Emit JSON matrix of touched projects. |
 | `piltover doctor` | Check required toolchains. |
-| `piltover new <kind> <name>` | Scaffold a subproject. |
-| `piltover tf <target> <action>` | Wrap `tofu` (Plan 4). |
-| `piltover stacks ls\|up\|down\|nuke <name>` | Wrap `docker compose` (Plan 5). |
+| `piltover new <kind> <name>` | Scaffold a subproject (`cli`, `package`, `app`, `stack`). |
+| `piltover tf <target> <action>` | Wrap `tofu` (Plan 4 — stub). |
+| `piltover stacks ls\|up\|down\|nuke <name>` | Wrap `docker compose` for local-dev stacks. |
 | `piltover rules ls\|lint\|sync-docs` | Manage Kody rules (Plan 5). |
+
+Real stacks (`postgres`, `localstack`) ship under `docker-stacks/` and are managed with `piltover stacks`. See the [local-dev stacks guide](/docs/guides/local-dev-stacks) for usage.
 
 ## Logging contract (HARD requirement)
 
