@@ -10,6 +10,8 @@
     "---Guides---",
     "guides/getting-started",
     "guides/adding-a-rule",
+    "guides/local-dev-stacks",
+    "guides/scaffold-a-subproject",
     "---For AI agents---",
     "agents/index",
     "agents/integrations",
